@@ -1,0 +1,35 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Analista Verdelandia",
+      "email": "analista@verdelandia.com",
+      "password": "123456",
+      "role": "analista"
+    },
+    {
+      "id": 2,
+      "name": "Responsavel Compras",
+      "email": "compras@verdelandia.com",
+      "password": "123456",
+      "role": "compras"
+    }
+  ],
+  "producers": [
+    {
+      "id": 1,
+      "name": "João Pedro Ortolan Pereira",
+      "city": "Guarapuava",
+      "phone": "42988423465",
+      "createdAt": "2026-04-13T13:25:05.686Z"
+    }
+  ],
+  "analyses": [
+    {
+      "id": 1,
+      "producerId": 1,
+      "stickPercent": 50,
+      "createdAt": "2026-04-13T13:25:17.491Z"
+    }
+  ]
+}
