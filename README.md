@@ -42,10 +42,4 @@ http://localhost:3000
 - `src/server.js`: API e servidor web
 - `src/data/database.json`: base de dados simples para demonstracao
 - `public/index.html`: interface da Sprint 1
-- `docs/`: documentos de apoio para entrega
-
-## Evidencias da Sprint 1
-
-- Checklist de testes: `docs/testes-manuais-sprint1.md`
-- Roteiro do video: `docs/roteiro-video-sprint1.md`
-- Relatorio da sprint: `docs/relatorio-sprint1.md`
+- `public/assets/logo-verdelandia.png`: logo da empresa

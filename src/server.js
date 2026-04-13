@@ -4,12 +4,9 @@ const { readDatabase, writeDatabase } = require("./data/store");
 
 const app = express();
 const PORT = 3000;
-const BRAND_ASSETS_DIR =
-  "C:\\Users\\joaop\\.cursor\\projects\\c-Users-joaop-Documents-Verdelandia-OneDrive-Documentos-Sistema-de-Controle-de-Qualidade\\assets";
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "..", "public")));
-app.use("/brand", express.static(BRAND_ASSETS_DIR));
 
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
