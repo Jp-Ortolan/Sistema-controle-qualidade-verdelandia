@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Controle de Qualidade - Sprint 1</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="brand-header">
+        <img
+          class="brand-logo"
+          src="/brand/c__Users_joaop_AppData_Roaming_Cursor_User_workspaceStorage_e6d2a190362e11ff83b6cdd669e24832_images_logo_verdelandia-0bb6ee24-6e9f-4d42-8f5e-ed6f9f4cb8eb.png"
+          alt="Logo Verdelandia"
+        />
+        <div>
+          <h1>Sistema de Controle de Qualidade</h1>
+          <p>Industria Ervateira Verdelandia LTDA</p>
+        </div>
+      </header>
+
+      <section id="loginSection" class="card">
+        <h2>US01 - Login no Sistema</h2>
+        <form id="loginForm">
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required />
+          </div>
+          <div class="field">
+            <label for="password">Senha</label>
+            <input id="password" name="password" type="password" required />
+          </div>
+          <button type="submit">Entrar</button>
+        </form>
+        <p id="loginMessage" class="message"></p>
+      </section>
+
+      <section id="appSection" class="hidden">
+        <div class="card">
+          <h2>US04 - Cadastro de Produtor</h2>
+          <form id="producerForm">
+            <div class="field">
+              <label for="producerName">Nome</label>
+              <input id="producerName" name="name" type="text" required />
+            </div>
+            <div class="field">
+              <label for="producerCity">Cidade</label>
+              <input id="producerCity" name="city" type="text" required />
+            </div>
+            <div class="field">
+              <label for="producerPhone">Telefone</label>
+              <input id="producerPhone" name="phone" type="text" required />
+            </div>
+            <button type="submit">Cadastrar produtor</button>
+          </form>
+          <p id="producerMessage" class="message"></p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Cidade</th>
+                <th>Telefone</th>
+              </tr>
+            </thead>
+            <tbody id="producersTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h2>US02 - Cadastro de Analise</h2>
+          <form id="analysisForm">
+            <div class="field">
+              <label for="analysisProducer">Produtor</label>
+              <select id="analysisProducer" name="producerId" required>
+                <option value="">Selecione</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="stickPercent">Percentual de palito (%)</label>
+              <input
+                id="stickPercent"
+                name="stickPercent"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                required
+              />
+            </div>
+            <button type="submit">Cadastrar analise</button>
+          </form>
+          <p id="analysisMessage" class="message"></p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Data/Hora</th>
+                <th>Produtor</th>
+                <th>% Palito</th>
+              </tr>
+            </thead>
+            <tbody id="analysesTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

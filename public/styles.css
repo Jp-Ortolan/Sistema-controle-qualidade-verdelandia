@@ -1,0 +1,130 @@
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #eef6ef 0%, #f8fcf8 100%);
+  color: #1b3b24;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #ffffff;
+  border: 1px solid #d7e7d6;
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 14px rgba(28, 73, 42, 0.08);
+}
+
+.brand-logo {
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+.card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #d7e7d6;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(28, 73, 42, 0.08);
+}
+
+form {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+}
+
+input,
+select,
+button {
+  font-size: 14px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #b9d3ba;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #2f7d32;
+  box-shadow: 0 0 0 3px rgba(47, 125, 50, 0.15);
+}
+
+button {
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(120deg, #2f7d32 0%, #569d39 100%);
+  color: #fff;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background: linear-gradient(120deg, #286a2b 0%, #4b8b33 100%);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th,
+td {
+  text-align: left;
+  border-bottom: 1px solid #e4efe4;
+  padding: 8px;
+}
+
+th {
+  background: #f3f9f2;
+  color: #1f5a2b;
+}
+
+.message {
+  min-height: 22px;
+  font-weight: bold;
+}
+
+.success {
+  color: #166534;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.hint {
+  color: #475569;
+  font-size: 13px;
+}
+
+.hidden {
+  display: none;
+}
