@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ANALISTA
+  COMPRAS
+  COMPRA_MATERIA_PRIMA
+}
+
+enum ConformityStatus {
+  C
+  NC
+}
+
+model User {
+  id           Int               @id @default(autoincrement())
+  name         String
+  email        String            @unique
+  passwordHash String
+  role         UserRole
+  analyses     Analysis[]
+  packages     PackagingSheet[]
+  samplings    SampleCollection[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+model Producer {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  city      String
+  phone     String
+  analyses  Analysis[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Analysis {
+  id              Int      @id @default(autoincrement())
+  producerId      Int
+  producer        Producer @relation(fields: [producerId], references: [id])
+  stickPercent    Float
+  discountPercent Float
+  createdById     Int
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model PackagingSheet {
+  id            Int               @id @default(autoincrement())
+  formCode      String            @default("FORQSE001")
+  lot           String
+  supplier      String
+  observations  String?
+  overallStatus ConformityStatus
+  createdById   Int
+  createdBy     User              @relation(fields: [createdById], references: [id])
+  parameters    PackagingParameter[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model PackagingParameter {
+  id         Int             @id @default(autoincrement())
+  sheetId    Int
+  sheet      PackagingSheet  @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  name       String
+  result     String
+  unit       String
+  standard   String
+  status     ConformityStatus
+  createdAt  DateTime        @default(now())
+}
+
+model SampleCollection {
+  id          Int      @id @default(autoincrement())
+  productType String
+  destination String
+  notes       String?
+  createdById Int
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

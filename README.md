@@ -1,45 +1,89 @@
-# Sistema de Controle de Qualidade - Verdelandia (Sprint 1)
+# Sistema de Controle de Qualidade - Verdelândia
 
-Incremento funcional da Sprint 1 com foco nas user stories:
+Incremento funcional (evolução pós-Sprint 1) com arquitetura web moderna — adequado ao **entregável Sprint 2** (código versionado + ambiente local demonstrável).
 
-- US01 - Login no sistema
-- US04 - Cadastro de produtor
-- US02 - Cadastro de analise de materia-prima
+## Stack utilizada
 
-## Tecnologias usadas
+- Backend: Node.js, Express, JWT, Zod, Prisma
+- Base de dados (desenvolvimento local): **SQLite** (ficheiro `backend/prisma/dev.db` — não precisa de instalar PostgreSQL)
+- Frontend: React + TypeScript
+- Deploy alvo (opcional): Railway (API), Vercel (web), PostgreSQL gerido (ex.: Supabase) — exige trocar `provider` no `schema.prisma` e gerar novas migrações para PostgreSQL
 
-- Node.js
-- Express
-- HTML, CSS e JavaScript
+## Estrutura
 
-## Como executar localmente
+- `backend/`: API REST com autenticação, perfis e módulos de domínio
+- `frontend/`: aplicação React com telas de login, menu e formulários principais
+- `src/` e `public/`: versão anterior da Sprint 1 (mantida como legado)
 
-1. Instale as dependencias:
+## Funcionalidades já preparadas
+
+- Login com JWT e controle por perfil (`ANALISTA`, `COMPRAS`, `COMPRA_MATERIA_PRIMA`)
+- Cadastro de produtores
+- Cadastro e consulta paginada de análises com cálculo automático de desconto
+- Cadastro e consulta paginada da ficha FORQSE001
+- Cadastro e consulta paginada de coleta de amostras
+- Tema claro/escuro no frontend
+
+## Testes automatizados
+
+Na raiz do repositório:
+
+```bash
+npm test
+```
+
+Executa testes unitários do backend (ex.: regra de desconto em `backend/src/utils/calculateDiscount.js`).
+
+## Documentação da sprint (entregáveis)
+
+- `docs/RELATORIO_SPRINT2.md` — relatório da Sprint 2 (sumário, métricas, retrospectiva, backlog atualizado resumido, anexo de testes manuais).
+- `docs/ROTEIRO_VIDEO_SPRINT2.md` — roteiro do vídeo de demonstração (5–10 min).
+
+## Como executar
+
+1) Instale dependências no projeto raiz:
 
 ```bash
 npm install
 ```
 
-2. Inicie o servidor:
+2) Instale backend e frontend:
 
 ```bash
-npm start
+npm install --prefix backend
+npm install --prefix frontend
 ```
 
-3. Acesse no navegador:
+3) Configure variáveis no backend:
 
-```text
-http://localhost:3000
+```bash
+copy backend\.env.example backend\.env
 ```
 
-## Usuario para demonstracao
+Se já existir um `backend/.env` antigo com `postgresql://...`, **substitua** a linha `DATABASE_URL` por `DATABASE_URL="file:./dev.db"` (caminho relativo à pasta `backend/prisma`, como no `.env.example`) para usar SQLite local.
 
-- Email: `analista@verdelandia.com`
-- Senha: `123456`
+4) Configure banco e Prisma:
 
-## Estrutura principal
+```bash
+npm run prisma:migrate --prefix backend
+npm run prisma:seed --prefix backend
+```
 
-- `src/server.js`: API e servidor web
-- `src/data/database.json`: base de dados simples para demonstracao
-- `public/index.html`: interface da Sprint 1
-- `public/assets/logo-verdelandia.png`: logo da empresa
+5) Suba frontend + backend:
+
+```bash
+npm run dev
+```
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:3333`
+
+### Modo vídeo (sem API), sem botão no login
+
+Com o frontend em `http://localhost:5173`, abra **`http://localhost:5173/?modo=video`** (ou `?video=1`). A app entra em modo local: cadastros e listagens ficam só no **localStorage** do navegador, sem backend.
+
+### Erro 500 no login (`/api/auth/login`)
+
+- Confirme em `backend/.env` a linha **`DATABASE_URL="file:./dev.db"`** (o projeto usa **SQLite**; um URL `postgresql://...` com o Prisma em SQLite gera 500).
+- Depois de alterar o `.env`, **pare e volte a iniciar** o backend (`npm run dev` ou só o processo da API).
+- Execute uma vez: `npm run prisma:migrate --prefix backend` e `npm run prisma:seed --prefix backend`.

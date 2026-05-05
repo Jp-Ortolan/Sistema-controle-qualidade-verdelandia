@@ -22,6 +22,20 @@
       "city": "Guarapuava",
       "phone": "42988423465",
       "createdAt": "2026-04-13T13:25:05.686Z"
+    },
+    {
+      "id": 2,
+      "name": "Juliano da Silva",
+      "city": "Cascavel",
+      "phone": "4298456794",
+      "createdAt": "2026-04-14T01:17:05.264Z"
+    },
+    {
+      "id": 3,
+      "name": "Hivan Lucas",
+      "city": "Guarapuava",
+      "phone": "4299564789",
+      "createdAt": "2026-04-14T01:25:36.190Z"
     }
   ],
   "analyses": [
@@ -30,6 +44,18 @@
       "producerId": 1,
       "stickPercent": 50,
       "createdAt": "2026-04-13T13:25:17.491Z"
+    },
+    {
+      "id": 2,
+      "producerId": 2,
+      "stickPercent": 70,
+      "createdAt": "2026-04-14T01:17:40.550Z"
+    },
+    {
+      "id": 3,
+      "producerId": 3,
+      "stickPercent": 80,
+      "createdAt": "2026-04-14T01:26:45.554Z"
     }
   ]
 }
