@@ -26,9 +26,8 @@ router.post('/login', async (req, res) => {
     return res.json({ token, perfil: user.perfil, email: user.email });
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
-    const msg = err?.message ?? String(err);
-    console.error('[auth/login]', msg);
-    return res.status(500).json({ error: 'Erro interno do servidor', detail: msg });
+    console.error('[auth/login]', err?.message ?? err);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
