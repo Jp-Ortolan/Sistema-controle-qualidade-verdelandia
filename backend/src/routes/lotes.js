@@ -1,0 +1,71 @@
+const express = require('express');
+const { z } = require('zod');
+const prisma = require('../lib/prisma');
+const auth = require('../middleware/auth');
+const { requirePerfil } = require('../middleware/perfil');
+
+const router = express.Router();
+router.use(auth);
+
+const PRODUTOS = ['NATURAL', 'ABACAXI', 'MENTA_LIMAO', 'LIMAO'];
+
+const loteSchema = z.object({
+  codigo: z.string().min(1, 'Código obrigatório'),
+  produto: z.enum(['NATURAL', 'ABACAXI', 'MENTA_LIMAO', 'LIMAO'], { errorMap: () => ({ message: 'Produto inválido' }) }),
+  dataFabricacao: z.string().min(1, 'Data de fabricação obrigatória'),
+  observacao: z.string().optional(),
+});
+
+router.get('/', async (_req, res) => {
+  try {
+    const lotes = await prisma.lote.findMany({ orderBy: { createdAt: 'desc' } });
+    return res.json(lotes);
+  } catch {
+    return res.status(500).json({ error: 'Erro ao buscar lotes' });
+  }
+});
+
+router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
+  try {
+    const data = loteSchema.parse(req.body);
+    const existe = await prisma.lote.findUnique({ where: { codigo: data.codigo } });
+    if (existe) return res.status(409).json({ error: 'Já existe um lote com esse código' });
+    const lote = await prisma.lote.create({
+      data: { ...data, dataFabricacao: new Date(data.dataFabricacao) },
+    });
+    return res.status(201).json(lote);
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
+    return res.status(500).json({ error: 'Erro ao criar lote' });
+  }
+});
+
+router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const data = loteSchema.parse(req.body);
+    const existeOutro = await prisma.lote.findFirst({ where: { codigo: data.codigo, id: { not: id } } });
+    if (existeOutro) return res.status(409).json({ error: 'Já existe outro lote com esse código' });
+    const lote = await prisma.lote.update({
+      where: { id },
+      data: { ...data, dataFabricacao: new Date(data.dataFabricacao) },
+    });
+    return res.json(lote);
+  } catch (err) {
+    if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Lote não encontrado' });
+    return res.status(500).json({ error: 'Erro ao atualizar lote' });
+  }
+});
+
+router.delete('/:id', requirePerfil('ANALISTA'), async (req, res) => {
+  try {
+    await prisma.lote.delete({ where: { id: parseInt(req.params.id) } });
+    return res.status(204).send();
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Lote não encontrado' });
+    return res.status(500).json({ error: 'Erro ao excluir lote' });
+  }
+});
+
+module.exports = router;

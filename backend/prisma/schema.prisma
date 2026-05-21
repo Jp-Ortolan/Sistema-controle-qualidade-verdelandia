@@ -25,30 +25,51 @@ model Produtor {
   coletas   ColetaAmostra[]
 }
 
+model Lote {
+  id             Int              @id @default(autoincrement())
+  codigo         String           @unique
+  produto        String
+  dataFabricacao DateTime
+  observacao     String?
+  createdAt      DateTime         @default(now())
+  analises       Analise[]
+  fichas         FichaEmbalagem[]
+}
+
 model Analise {
-  id               Int      @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   produtorId       Int
-  produtor         Produtor @relation(fields: [produtorId], references: [id])
+  produtor         Produtor  @relation(fields: [produtorId], references: [id])
+  loteId           Int?
+  lote             Lote?     @relation(fields: [loteId], references: [id])
+  ticket           String?
+  dataAnalise      DateTime  @default(now())
+  dataFabricacao   DateTime?
   percentualPalito Float
+  teorPo           Float?
+  umidade          Float?
   desconto         Float
-  createdAt        DateTime @default(now())
+  observacao       String?
+  createdAt        DateTime  @default(now())
 }
 
 model FichaEmbalagem {
   id           Int      @id @default(autoincrement())
-  lote         String
+  loteId       Int?
+  lote         Lote?    @relation(fields: [loteId], references: [id])
   fornecedor   String
   parametros   String
+  observacoes  String?
   statusGlobal String
   createdAt    DateTime @default(now())
 }
 
 model ColetaAmostra {
-  id          Int      @id @default(autoincrement())
-  produtorId  Int
-  produtor    Produtor @relation(fields: [produtorId], references: [id])
+  id          Int       @id @default(autoincrement())
+  produtorId  Int?
+  produtor    Produtor? @relation(fields: [produtorId], references: [id])
   tipoProduto String
   destino     String
   dataColeta  DateTime
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 }

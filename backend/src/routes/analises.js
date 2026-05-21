@@ -8,8 +8,15 @@ const router = express.Router();
 router.use(auth);
 
 const analiseSchema = z.object({
-  produtorId: z.number().int().positive('Produtor inválido'),
-  percentualPalito: z.number().min(0).max(100, 'Percentual deve ser entre 0 e 100'),
+  produtorId: z.number().int().positive('Produtor obrigatório'),
+  loteId: z.number().int().positive().optional().nullable(),
+  ticket: z.string().optional().nullable(),
+  dataAnalise: z.string().optional().nullable(),
+  dataFabricacao: z.string().optional().nullable(),
+  percentualPalito: z.number().min(0, 'Mínimo 0%').max(100, 'Máximo 100%'),
+  teorPo: z.number().min(0, 'Mínimo 0%').max(100, 'Máximo 100%').optional().nullable(),
+  umidade: z.number().min(0, 'Mínimo 0%').max(100, 'Máximo 100%').optional().nullable(),
+  observacao: z.string().optional().nullable(),
 });
 
 function calcularDesconto(pct) {
@@ -23,41 +30,44 @@ function buildDateRange(inicio, fim) {
   if (!inicio && !fim) return undefined;
   const range = {};
   if (inicio) range.gte = new Date(inicio);
-  if (fim) {
-    const d = new Date(fim);
-    d.setHours(23, 59, 59, 999);
-    range.lte = d;
-  }
+  if (fim) { const d = new Date(fim); d.setHours(23, 59, 59, 999); range.lte = d; }
   return range;
 }
 
-// GET: todos os perfis autenticados podem visualizar análises
+const INCLUDE = {
+  produtor: { select: { nome: true } },
+  lote: { select: { codigo: true, produto: true } },
+};
+
 router.get('/', async (req, res) => {
   try {
     const { produtorId, dataInicio, dataFim } = req.query;
     const where = {};
     if (produtorId) where.produtorId = parseInt(produtorId);
-    const dateRange = buildDateRange(dataInicio, dataFim);
-    if (dateRange) where.createdAt = dateRange;
-
-    const analises = await prisma.analise.findMany({
-      where,
-      include: { produtor: { select: { nome: true } } },
-      orderBy: { createdAt: 'desc' },
-    });
+    const dr = buildDateRange(dataInicio, dataFim);
+    if (dr) where.createdAt = dr;
+    const analises = await prisma.analise.findMany({ where, include: INCLUDE, orderBy: { createdAt: 'desc' } });
     return res.json(analises);
-  } catch {
-    return res.status(500).json({ error: 'Erro ao buscar análises' });
-  }
+  } catch { return res.status(500).json({ error: 'Erro ao buscar análises' }); }
 });
 
-// POST, PUT, DELETE: apenas ANALISTA
 router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
   try {
-    const { produtorId, percentualPalito } = analiseSchema.parse(req.body);
+    const d = analiseSchema.parse(req.body);
     const analise = await prisma.analise.create({
-      data: { produtorId, percentualPalito, desconto: calcularDesconto(percentualPalito) },
-      include: { produtor: { select: { nome: true } } },
+      data: {
+        produtorId: d.produtorId,
+        loteId: d.loteId ?? null,
+        ticket: d.ticket ?? null,
+        dataAnalise: d.dataAnalise ? new Date(d.dataAnalise) : new Date(),
+        dataFabricacao: d.dataFabricacao ? new Date(d.dataFabricacao) : null,
+        percentualPalito: d.percentualPalito,
+        teorPo: d.teorPo ?? null,
+        umidade: d.umidade ?? null,
+        desconto: calcularDesconto(d.percentualPalito),
+        observacao: d.observacao ?? null,
+      },
+      include: INCLUDE,
     });
     return res.status(201).json(analise);
   } catch (err) {
@@ -69,11 +79,22 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
 router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { produtorId, percentualPalito } = analiseSchema.parse(req.body);
+    const d = analiseSchema.parse(req.body);
     const analise = await prisma.analise.update({
       where: { id },
-      data: { produtorId, percentualPalito, desconto: calcularDesconto(percentualPalito) },
-      include: { produtor: { select: { nome: true } } },
+      data: {
+        produtorId: d.produtorId,
+        loteId: d.loteId ?? null,
+        ticket: d.ticket ?? null,
+        dataAnalise: d.dataAnalise ? new Date(d.dataAnalise) : undefined,
+        dataFabricacao: d.dataFabricacao ? new Date(d.dataFabricacao) : null,
+        percentualPalito: d.percentualPalito,
+        teorPo: d.teorPo ?? null,
+        umidade: d.umidade ?? null,
+        desconto: calcularDesconto(d.percentualPalito),
+        observacao: d.observacao ?? null,
+      },
+      include: INCLUDE,
     });
     return res.json(analise);
   } catch (err) {

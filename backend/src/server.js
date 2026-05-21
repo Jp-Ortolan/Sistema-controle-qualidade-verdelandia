@@ -11,6 +11,8 @@ app.use('/api/produtores', require('./routes/produtores'));
 app.use('/api/analises', require('./routes/analises'));
 app.use('/api/fichas', require('./routes/fichas'));
 app.use('/api/coletas', require('./routes/coletas'));
+app.use('/api/lotes', require('./routes/lotes'));
+app.use('/api/dashboard', require('./routes/dashboard'));
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', sistema: 'SCQ Verdelândia' }));
 
