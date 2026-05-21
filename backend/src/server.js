@@ -1,54 +1,22 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const { port, corsOrigin, isProduction } = require("./config/env");
-const { router } = require("./routes");
-const { errorHandler } = require("./middlewares/error-handler");
-const { apiLimiter } = require("./middlewares/rate-limiters");
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
+app.use(express.json());
 
-/** Só ative atrás de reverse proxy confiável (ex.: nginx), senão X-Forwarded-For pode ser forjado. */
-if (process.env.TRUST_PROXY === "1") {
-  app.set("trust proxy", 1);
-}
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/produtores', require('./routes/produtores'));
+app.use('/api/analises', require('./routes/analises'));
+app.use('/api/fichas', require('./routes/fichas'));
+app.use('/api/coletas', require('./routes/coletas'));
 
-app.use(
-  helmet({
-    contentSecurityPolicy: isProduction ? undefined : false,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-  }),
+app.get('/api/health', (_req, res) => res.json({ status: 'ok', sistema: 'SCQ Verdelândia' }));
+
+app.use((_req, res) => res.status(404).json({ error: 'Rota não encontrada' }));
+
+const PORT = process.env.PORT || 3333;
+app.listen(PORT, () =>
+  console.log(`\n✅ SCQ Backend rodando em http://localhost:${PORT}\n`)
 );
-
-app.use(
-  cors({
-    origin: corsOrigin,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    maxAge: 86400,
-  }),
-);
-
-app.use(morgan(isProduction ? "combined" : "dev"));
-app.use(express.json({ limit: "128kb" }));
-
-app.use(
-  "/api",
-  (req, res, next) => {
-    if (req.method === "GET" && req.path === "/health") {
-      return next();
-    }
-    if (req.method === "POST" && req.path === "/auth/login") {
-      return next();
-    }
-    return apiLimiter(req, res, next);
-  },
-  router,
-);
-
-app.use(errorHandler);
-
-app.listen(port, () => {
-  console.log(`API online em http://localhost:${port}`);
-});

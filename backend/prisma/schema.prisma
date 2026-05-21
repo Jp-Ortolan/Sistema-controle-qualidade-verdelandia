@@ -3,89 +3,52 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  ANALISTA
-  COMPRAS
-  COMPRA_MATERIA_PRIMA
-}
-
-enum ConformityStatus {
-  C
-  NC
-}
-
 model User {
-  id           Int               @id @default(autoincrement())
-  name         String
-  email        String            @unique
-  passwordHash String
-  role         UserRole
-  analyses     Analysis[]
-  packages     PackagingSheet[]
-  samplings    SampleCollection[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  senhaHash String
+  perfil    String
+  createdAt DateTime @default(now())
 }
 
-model Producer {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  city      String
-  phone     String
-  analyses  Analysis[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+model Produtor {
+  id        Int             @id @default(autoincrement())
+  nome      String          @unique
+  cidade    String
+  telefone  String
+  createdAt DateTime        @default(now())
+  analises  Analise[]
+  coletas   ColetaAmostra[]
 }
 
-model Analysis {
-  id              Int      @id @default(autoincrement())
-  producerId      Int
-  producer        Producer @relation(fields: [producerId], references: [id])
-  stickPercent    Float
-  discountPercent Float
-  createdById     Int
-  createdBy       User     @relation(fields: [createdById], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+model Analise {
+  id               Int      @id @default(autoincrement())
+  produtorId       Int
+  produtor         Produtor @relation(fields: [produtorId], references: [id])
+  percentualPalito Float
+  desconto         Float
+  createdAt        DateTime @default(now())
 }
 
-model PackagingSheet {
-  id            Int               @id @default(autoincrement())
-  formCode      String            @default("FORQSE001")
-  lot           String
-  supplier      String
-  observations  String?
-  overallStatus ConformityStatus
-  createdById   Int
-  createdBy     User              @relation(fields: [createdById], references: [id])
-  parameters    PackagingParameter[]
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+model FichaEmbalagem {
+  id           Int      @id @default(autoincrement())
+  lote         String
+  fornecedor   String
+  parametros   String
+  statusGlobal String
+  createdAt    DateTime @default(now())
 }
 
-model PackagingParameter {
-  id         Int             @id @default(autoincrement())
-  sheetId    Int
-  sheet      PackagingSheet  @relation(fields: [sheetId], references: [id], onDelete: Cascade)
-  name       String
-  result     String
-  unit       String
-  standard   String
-  status     ConformityStatus
-  createdAt  DateTime        @default(now())
-}
-
-model SampleCollection {
+model ColetaAmostra {
   id          Int      @id @default(autoincrement())
-  productType String
-  destination String
-  notes       String?
-  createdById Int
-  createdBy   User     @relation(fields: [createdById], references: [id])
+  produtorId  Int
+  produtor    Produtor @relation(fields: [produtorId], references: [id])
+  tipoProduto String
+  destino     String
+  dataColeta  DateTime
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }

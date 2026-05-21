@@ -1,9 +1,23 @@
-node_modules/
+﻿# Dependências
+**/node_modules/
+
+# Variáveis de ambiente (contêm credenciais)
+**/.env
+!**/.env.example
+!**/.env.production
+
+# Build do frontend
+frontend/dist/
+
+# Banco SQLite local
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+
+# Claude Code
+.claude/
+
+# Logs e temporários
+*.log
 npm-debug.log*
 .DS_Store
 Thumbs.db
-backend/.env
-.env
-.env.local
-backend/prisma/dev.db
-backend/prisma/dev.db-journal
