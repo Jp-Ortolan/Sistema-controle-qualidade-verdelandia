@@ -8,7 +8,8 @@ const router = express.Router();
 router.use(auth);
 
 const analiseSchema = z.object({
-  nomeProdutor: z.string().min(1, 'Nome do produtor obrigatório'),
+  nomeProdutor: z.string().optional().nullable(),
+  ticket: z.string().optional().nullable(),
   loteId: z.number().int().positive().optional().nullable(),
   dataAnalise: z.string().optional().nullable(),
   dataFabricacao: z.string().optional().nullable(),
@@ -23,11 +24,6 @@ function calcularDesconto(pct) {
   if (pct <= 10) return 5;
   if (pct <= 15) return 10;
   return 15;
-}
-
-async function gerarTicket() {
-  const count = await prisma.analise.count();
-  return `TK-${String(count + 1).padStart(4, '0')}`;
 }
 
 function buildDateRange(inicio, fim) {
@@ -55,12 +51,11 @@ router.get('/', async (req, res) => {
 router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
   try {
     const d = analiseSchema.parse(req.body);
-    const ticket = await gerarTicket();
     const analise = await prisma.analise.create({
       data: {
-        nomeProdutor: d.nomeProdutor,
+        nomeProdutor: d.nomeProdutor ?? '',
         loteId: d.loteId ?? null,
-        ticket,
+        ticket: d.ticket?.trim() || null,
         dataAnalise: d.dataAnalise ? new Date(d.dataAnalise) : new Date(),
         dataFabricacao: d.dataFabricacao ? new Date(d.dataFabricacao) : null,
         percentualPalito: d.percentualPalito,
@@ -85,8 +80,9 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
     const analise = await prisma.analise.update({
       where: { id },
       data: {
-        nomeProdutor: d.nomeProdutor,
+        nomeProdutor: d.nomeProdutor ?? '',
         loteId: d.loteId ?? null,
+        ticket: d.ticket?.trim() || null,
         dataAnalise: d.dataAnalise ? new Date(d.dataAnalise) : undefined,
         dataFabricacao: d.dataFabricacao ? new Date(d.dataFabricacao) : null,
         percentualPalito: d.percentualPalito,

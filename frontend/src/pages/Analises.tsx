@@ -26,6 +26,7 @@ function formatDate(s: string): string {
 const TODAY = new Date().toISOString().split('T')[0]
 
 const EMPTY_FORM = {
+  ticket: '',
   nomeProdutor: '',
   loteId: '',
   dataAnalise: TODAY,
@@ -99,6 +100,7 @@ export default function Analises() {
   function openEdit(a: Analise) {
     setEditingItem(a)
     setForm({
+      ticket: a.ticket ?? '',
       nomeProdutor: a.nomeProdutor,
       loteId: a.loteId ? String(a.loteId) : '',
       dataAnalise: a.dataAnalise.split('T')[0],
@@ -114,7 +116,6 @@ export default function Analises() {
 
   function validate(): boolean {
     const errs: FormErrors = {}
-    if (!form.nomeProdutor.trim()) errs.nomeProdutor = 'Nome do produtor é obrigatório'
     if (!form.dataAnalise) errs.dataAnalise = 'Data da análise é obrigatória'
     if (!form.percentualPalito) errs.percentualPalito = 'Teor de palito é obrigatório'
     setErrors(errs)
@@ -126,7 +127,8 @@ export default function Analises() {
     if (!validate()) return
     setSaving(true)
     const payload = {
-      nomeProdutor: form.nomeProdutor.trim(),
+      ticket: form.ticket.trim() || null,
+      nomeProdutor: form.nomeProdutor.trim() || null,
       loteId: form.loteId ? parseInt(form.loteId) : null,
       dataAnalise: form.dataAnalise,
       dataFabricacao: form.dataFabricacao || null,
@@ -240,27 +242,26 @@ export default function Analises() {
             <div className="flex-1 overflow-y-auto px-6 py-5">
               <form id="analise-form" onSubmit={handleSubmit} className="space-y-4">
 
-                {/* Ticket (somente visualização em edição) */}
-                {editingItem?.ticket && (
-                  <div className="rounded-xl border border-emerald-800/50 bg-emerald-900/20 px-4 py-2.5 flex items-center gap-3">
-                    <span className="text-xs text-zinc-500">Ticket</span>
-                    <span className="font-mono text-sm font-bold text-emerald-400">{editingItem.ticket}</span>
-                    <span className="ml-auto text-[10px] text-zinc-600">gerado automaticamente</span>
-                  </div>
-                )}
+                {/* Ticket */}
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-zinc-400">Ticket (opcional)</label>
+                  <input
+                    value={form.ticket}
+                    onChange={(e) => setForm((f) => ({ ...f, ticket: e.target.value }))}
+                    placeholder="Ex: 1234"
+                    className={inputCls}
+                  />
+                </div>
 
                 {/* Nome do Produtor */}
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-zinc-400">
-                    Produtor / Fornecedor<span className="ml-0.5 text-red-400">*</span>
-                  </label>
+                  <label className="mb-1 block text-xs font-medium text-zinc-400">Produtor (opcional)</label>
                   <input
                     value={form.nomeProdutor}
                     onChange={(e) => setForm((f) => ({ ...f, nomeProdutor: e.target.value }))}
                     placeholder="Ex: Sítio Boa Esperança"
                     className={inputCls}
                   />
-                  {errors.nomeProdutor && <p className="mt-1 text-xs text-red-400">{errors.nomeProdutor}</p>}
                 </div>
 
                 {/* Lote */}

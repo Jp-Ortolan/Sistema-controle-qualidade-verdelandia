@@ -120,7 +120,8 @@ function buildParams(params: Record<string, string | undefined>): string {
 
 type LoteInput = { codigo: string; produto: string; dataFabricacao: string; observacao?: string }
 type AnaliseInput = {
-  nomeProdutor: string
+  nomeProdutor?: string | null
+  ticket?: string | null
   loteId?: number | null
   dataAnalise?: string
   dataFabricacao?: string | null
