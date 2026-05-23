@@ -33,7 +33,7 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok', sistema: 'SCQ Ver
 
 app.use((_req, res) => res.status(404).json({ error: 'Rota não encontrada' }));
 
-const PORT = process.env.PORT || 3333;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () =>
   console.log(`\n✅ SCQ Backend rodando em http://localhost:${PORT}\n`)
 );
