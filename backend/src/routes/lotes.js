@@ -8,8 +8,6 @@ const { auditLog } = require('../lib/logger');
 const router = express.Router();
 router.use(auth);
 
-const PRODUTOS = ['NATURAL', 'ABACAXI', 'MENTA_LIMAO', 'LIMAO'];
-
 const loteSchema = z.object({
   codigo: z.string().min(1, 'Código obrigatório'),
   produto: z.enum(['NATURAL', 'ABACAXI', 'MENTA_LIMAO', 'LIMAO'], { errorMap: () => ({ message: 'Produto inválido' }) }),

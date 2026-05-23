@@ -4,6 +4,7 @@ const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { requirePerfil } = require('../middleware/perfil');
 const { auditLog } = require('../lib/logger');
+const { buildDateRange, LOTE_INCLUDE } = require('../lib/utils');
 
 const router = express.Router();
 router.use(auth);
@@ -25,15 +26,7 @@ const fichaSchema = z.object({
   statusGlobal: z.enum(['CONFORME', 'NAO_CONFORME']),
 });
 
-function buildDateRange(inicio, fim) {
-  if (!inicio && !fim) return undefined;
-  const range = {};
-  if (inicio) range.gte = new Date(inicio);
-  if (fim) { const d = new Date(fim); d.setHours(23, 59, 59, 999); range.lte = d; }
-  return range;
-}
-
-const INCLUDE = { lote: { select: { codigo: true, produto: true } } };
+const INCLUDE = LOTE_INCLUDE;
 
 router.get('/', async (req, res) => {
   try {
@@ -200,7 +193,7 @@ router.get('/:id/pdf', async (req, res) => {
       res.end(buffer);
     });
   } catch (err) {
-    console.error('PDF error:', err);
+    console.error('[fichas/pdf]', err?.message);
     if (!res.headersSent) return res.status(500).json({ error: 'Erro ao gerar PDF' });
   }
 });

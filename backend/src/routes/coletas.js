@@ -4,27 +4,18 @@ const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { requirePerfil } = require('../middleware/perfil');
 const { auditLog } = require('../lib/logger');
+const { buildDateRange } = require('../lib/utils');
 const XLSX = require('xlsx');
 
 const router = express.Router();
 router.use(auth);
 router.use(requirePerfil('ANALISTA', 'COMPRAS'));
 
-const TIPOS = ['Natural', 'Abacaxi', 'Menta & Limão', 'Limão'];
-
 const coletaSchema = z.object({
   dataColeta: z.string().min(1, 'Data obrigatória'),
   tipoProduto: z.string().min(1, 'Tipo de produto obrigatório'),
   destino: z.string().min(1, 'Destino obrigatório'),
 });
-
-function buildDateRange(inicio, fim) {
-  if (!inicio && !fim) return undefined;
-  const range = {};
-  if (inicio) range.gte = new Date(inicio);
-  if (fim) { const d = new Date(fim); d.setHours(23, 59, 59, 999); range.lte = d; }
-  return range;
-}
 
 router.get('/exportar', async (_req, res) => {
   try {

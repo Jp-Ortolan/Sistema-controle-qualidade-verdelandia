@@ -3,8 +3,8 @@
 
 # Variáveis de ambiente (contêm credenciais)
 **/.env
+**/.env.production
 !**/.env.example
-!**/.env.production
 
 # Build do frontend
 frontend/dist/

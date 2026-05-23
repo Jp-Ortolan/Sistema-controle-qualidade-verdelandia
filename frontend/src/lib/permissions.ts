@@ -32,7 +32,7 @@ const CAN_DELETE: Record<Resource, Perfil[]> = {
 }
 
 const CAN_EXPORT: Record<Resource, Perfil[]> = {
-  analises: ['ANALISTA', 'COMPRAS', 'COMPRA_MATERIA_PRIMA'],
+  analises: ['ANALISTA', 'COMPRAS', 'COMPRA_MATERIA_PRIMA', 'GESTOR'],
   fichas: ['ANALISTA', 'COMPRAS'],
   coletas: ['ANALISTA', 'COMPRAS'],
   lotes: ['ANALISTA', 'COMPRAS'],

@@ -4,6 +4,7 @@ const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { requirePerfil } = require('../middleware/perfil');
 const { auditLog } = require('../lib/logger');
+const { buildDateRange, LOTE_INCLUDE } = require('../lib/utils');
 
 const router = express.Router();
 router.use(auth);
@@ -27,15 +28,7 @@ function calcularDesconto(pct) {
   return 15;
 }
 
-function buildDateRange(inicio, fim) {
-  if (!inicio && !fim) return undefined;
-  const range = {};
-  if (inicio) range.gte = new Date(inicio);
-  if (fim) { const d = new Date(fim); d.setHours(23, 59, 59, 999); range.lte = d; }
-  return range;
-}
-
-const INCLUDE = { lote: { select: { codigo: true, produto: true } } };
+const INCLUDE = LOTE_INCLUDE;
 
 router.get('/', async (req, res) => {
   try {
