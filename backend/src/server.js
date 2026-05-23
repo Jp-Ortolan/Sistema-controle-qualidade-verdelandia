@@ -25,21 +25,22 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
+const allowedOrigins = [
+  'https://sistema-controle-qualidade-verdelan.vercel.app',
+  'http://localhost:5173',
+];
+
 app.use(cors({
   origin: function(origin, callback) {
-    const allowed = [
-      'https://sistema-controle-qualidade-verdelan.vercel.app',
-      'https://sistema-controle-qualidade-verdelandia.vercel.app',
-      'http://localhost:5173',
-      'http://localhost:3333',
-    ];
-    if (!origin || allowed.includes(origin) || origin.endsWith('.vercel.app')) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error('Origem não permitida pelo CORS'));
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json());
 
