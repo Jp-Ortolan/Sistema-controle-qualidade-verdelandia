@@ -3,13 +3,14 @@ const { z } = require('zod');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { requirePerfil } = require('../middleware/perfil');
+const { auditLog } = require('../lib/logger');
 
 const router = express.Router();
 router.use(auth);
 
 const analiseSchema = z.object({
   nomeProdutor: z.string().optional().nullable(),
-  ticket: z.string().optional().nullable(),
+  ticket: z.string().min(1, 'Ticket obrigatório'),
   loteId: z.number().int().positive().optional().nullable(),
   dataAnalise: z.string().optional().nullable(),
   dataFabricacao: z.string().optional().nullable(),
@@ -66,6 +67,7 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
       },
       include: INCLUDE,
     });
+    auditLog(req, 'CRIAR', 'ANALISE', analise.id, { ticket: analise.ticket, nomeProdutor: analise.nomeProdutor });
     return res.status(201).json(analise);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
@@ -82,7 +84,7 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
       data: {
         nomeProdutor: d.nomeProdutor ?? '',
         loteId: d.loteId ?? null,
-        ticket: d.ticket?.trim() || null,
+        ticket: d.ticket.trim(),
         dataAnalise: d.dataAnalise ? new Date(d.dataAnalise) : undefined,
         dataFabricacao: d.dataFabricacao ? new Date(d.dataFabricacao) : null,
         percentualPalito: d.percentualPalito,
@@ -93,6 +95,7 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
       },
       include: INCLUDE,
     });
+    auditLog(req, 'EDITAR', 'ANALISE', analise.id, { ticket: analise.ticket });
     return res.json(analise);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
@@ -103,7 +106,9 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
 
 router.delete('/:id', requirePerfil('ANALISTA'), async (req, res) => {
   try {
-    await prisma.analise.delete({ where: { id: parseInt(req.params.id) } });
+    const id = parseInt(req.params.id);
+    await prisma.analise.delete({ where: { id } });
+    auditLog(req, 'EXCLUIR', 'ANALISE', id, null);
     return res.status(204).send();
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Análise não encontrada' });

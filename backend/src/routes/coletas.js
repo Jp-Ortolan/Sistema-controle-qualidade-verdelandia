@@ -3,6 +3,7 @@ const { z } = require('zod');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { requirePerfil } = require('../middleware/perfil');
+const { auditLog } = require('../lib/logger');
 const XLSX = require('xlsx');
 
 const router = express.Router();
@@ -65,6 +66,7 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
     const coleta = await prisma.coletaAmostra.create({
       data: { tipoProduto: data.tipoProduto, destino: data.destino, dataColeta: new Date(data.dataColeta) },
     });
+    auditLog(req, 'CRIAR', 'COLETA', coleta.id, { tipoProduto: coleta.tipoProduto, destino: coleta.destino });
     return res.status(201).json(coleta);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
@@ -80,6 +82,7 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
       where: { id },
       data: { tipoProduto: data.tipoProduto, destino: data.destino, dataColeta: new Date(data.dataColeta) },
     });
+    auditLog(req, 'EDITAR', 'COLETA', coleta.id, { tipoProduto: coleta.tipoProduto, destino: coleta.destino });
     return res.json(coleta);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
@@ -90,7 +93,9 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
 
 router.delete('/:id', requirePerfil('ANALISTA'), async (req, res) => {
   try {
-    await prisma.coletaAmostra.delete({ where: { id: parseInt(req.params.id) } });
+    const id = parseInt(req.params.id);
+    await prisma.coletaAmostra.delete({ where: { id } });
+    auditLog(req, 'EXCLUIR', 'COLETA', id, null);
     return res.status(204).send();
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Coleta não encontrada' });

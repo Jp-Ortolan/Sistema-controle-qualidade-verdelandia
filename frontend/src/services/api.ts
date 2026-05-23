@@ -65,6 +65,24 @@ export interface AuthResponse {
   email: string
 }
 
+export interface AuditLog {
+  id: number
+  userId: number
+  userEmail: string
+  acao: string
+  entidade: string
+  entidadeId: number
+  detalhes?: string | null
+  createdAt: string
+}
+
+export interface LogsResponse {
+  logs: AuditLog[]
+  total: number
+  pagina: number
+  limite: number
+}
+
 export interface DashboardData {
   totalAnalises: number
   analisesEstaSemana: number
@@ -121,7 +139,7 @@ function buildParams(params: Record<string, string | undefined>): string {
 type LoteInput = { codigo: string; produto: string; dataFabricacao: string; observacao?: string }
 type AnaliseInput = {
   nomeProdutor?: string | null
-  ticket?: string | null
+  ticket: string
   loteId?: number | null
   dataAnalise?: string
   dataFabricacao?: string | null
@@ -174,5 +192,10 @@ export const api = {
     update: (id: number, data: ColetaInput) => request<ColetaAmostra>(`/coletas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) => request<void>(`/coletas/${id}`, { method: 'DELETE' }),
     exportar: () => fetch(`${BASE}/coletas/exportar`, { headers: authHeaders() }),
+  },
+
+  logs: {
+    list: (filters?: { entidade?: string; acao?: string; pagina?: string; limite?: string }) =>
+      request<LogsResponse>(`/logs${buildParams(filters ?? {})}`),
   },
 }

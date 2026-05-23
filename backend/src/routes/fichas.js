@@ -3,6 +3,7 @@ const { z } = require('zod');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { requirePerfil } = require('../middleware/perfil');
+const { auditLog } = require('../lib/logger');
 
 const router = express.Router();
 router.use(auth);
@@ -64,6 +65,7 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
       },
       include: INCLUDE,
     });
+    auditLog(req, 'CRIAR', 'FICHA', ficha.id, { fornecedor: ficha.fornecedor, status: ficha.statusGlobal });
     return res.status(201).json(ficha);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
@@ -86,6 +88,7 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
       },
       include: INCLUDE,
     });
+    auditLog(req, 'EDITAR', 'FICHA', ficha.id, { fornecedor: ficha.fornecedor, status: ficha.statusGlobal });
     return res.json(ficha);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
@@ -96,7 +99,9 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
 
 router.delete('/:id', requirePerfil('ANALISTA'), async (req, res) => {
   try {
-    await prisma.fichaEmbalagem.delete({ where: { id: parseInt(req.params.id) } });
+    const id = parseInt(req.params.id);
+    await prisma.fichaEmbalagem.delete({ where: { id } });
+    auditLog(req, 'EXCLUIR', 'FICHA', id, null);
     return res.status(204).send();
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Ficha não encontrada' });

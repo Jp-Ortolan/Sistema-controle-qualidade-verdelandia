@@ -116,6 +116,7 @@ export default function Analises() {
 
   function validate(): boolean {
     const errs: FormErrors = {}
+    if (!form.ticket.trim()) errs.ticket = 'Ticket é obrigatório'
     if (!form.dataAnalise) errs.dataAnalise = 'Data da análise é obrigatória'
     if (!form.percentualPalito) errs.percentualPalito = 'Teor de palito é obrigatório'
     setErrors(errs)
@@ -127,7 +128,7 @@ export default function Analises() {
     if (!validate()) return
     setSaving(true)
     const payload = {
-      ticket: form.ticket.trim() || null,
+      ticket: form.ticket.trim(),
       nomeProdutor: form.nomeProdutor.trim() || null,
       loteId: form.loteId ? parseInt(form.loteId) : null,
       dataAnalise: form.dataAnalise,
@@ -191,7 +192,7 @@ export default function Analises() {
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-serif text-2xl font-semibold text-zinc-100">Análises de Palito</h1>
+        <h1 className="font-serif text-2xl font-semibold text-zinc-100">Análises de Erva-Mate</h1>
         {canWrite && (
           <button
             onClick={openCreate}
@@ -244,13 +245,16 @@ export default function Analises() {
 
                 {/* Ticket */}
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-zinc-400">Ticket (opcional)</label>
+                  <label className="mb-1 block text-xs font-medium text-zinc-400">
+                    Ticket<span className="ml-0.5 text-red-400">*</span>
+                  </label>
                   <input
                     value={form.ticket}
                     onChange={(e) => setForm((f) => ({ ...f, ticket: e.target.value }))}
                     placeholder="Ex: 1234"
                     className={inputCls}
                   />
+                  {errors.ticket && <p className="mt-1 text-xs text-red-400">{errors.ticket}</p>}
                 </div>
 
                 {/* Nome do Produtor */}
@@ -308,7 +312,7 @@ export default function Analises() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-zinc-400">
-                      Teor de Palito %<span className="ml-0.5 text-red-400">*</span>
+                      Teor de Palito (Erva-Mate) %<span className="ml-0.5 text-red-400">*</span>
                     </label>
                     <input
                       type="number"
@@ -404,7 +408,7 @@ export default function Analises() {
             <thead>
               <tr>
                 {[
-                  'Ticket', 'Produtor', 'Lote', 'Palito %', 'Teor Pó %', 'Umidade %', 'Desconto', 'Data',
+                  'Ticket', 'Produtor', 'Lote', 'Palito % (Erva)', 'Teor Pó %', 'Umidade %', 'Desconto', 'Data',
                   ...(showActions ? ['Ações'] : []),
                 ].map((h) => (
                   <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>

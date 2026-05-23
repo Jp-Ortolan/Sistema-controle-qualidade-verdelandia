@@ -1,5 +1,5 @@
 export type Perfil = 'ANALISTA' | 'COMPRAS' | 'COMPRA_MATERIA_PRIMA'
-export type Resource = 'analises' | 'fichas' | 'coletas' | 'lotes'
+export type Resource = 'analises' | 'fichas' | 'coletas' | 'lotes' | 'logs'
 
 export function getPerfil(): Perfil | null {
   const raw = localStorage.getItem('scq_user')
@@ -12,6 +12,7 @@ const CAN_VIEW: Record<Resource, Perfil[]> = {
   fichas: ['ANALISTA', 'COMPRAS'],
   coletas: ['ANALISTA', 'COMPRAS'],
   lotes: ['ANALISTA', 'COMPRAS'],
+  logs: ['ANALISTA'],
 }
 
 const CAN_WRITE: Record<Resource, Perfil[]> = {
@@ -19,6 +20,7 @@ const CAN_WRITE: Record<Resource, Perfil[]> = {
   fichas: ['ANALISTA'],
   coletas: ['ANALISTA'],
   lotes: ['ANALISTA'],
+  logs: [],
 }
 
 const CAN_DELETE: Record<Resource, Perfil[]> = {
@@ -26,6 +28,7 @@ const CAN_DELETE: Record<Resource, Perfil[]> = {
   fichas: [],
   coletas: [],
   lotes: [],
+  logs: [],
 }
 
 const CAN_EXPORT: Record<Resource, Perfil[]> = {
@@ -33,6 +36,7 @@ const CAN_EXPORT: Record<Resource, Perfil[]> = {
   fichas: ['ANALISTA', 'COMPRAS'],
   coletas: ['ANALISTA', 'COMPRAS'],
   lotes: ['ANALISTA', 'COMPRAS'],
+  logs: ['ANALISTA'],
 }
 
 export const can = {

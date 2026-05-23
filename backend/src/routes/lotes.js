@@ -3,6 +3,7 @@ const { z } = require('zod');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { requirePerfil } = require('../middleware/perfil');
+const { auditLog } = require('../lib/logger');
 
 const router = express.Router();
 router.use(auth);
@@ -33,6 +34,7 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
     const lote = await prisma.lote.create({
       data: { ...data, dataFabricacao: new Date(data.dataFabricacao) },
     });
+    auditLog(req, 'CRIAR', 'LOTE', lote.id, { codigo: lote.codigo, produto: lote.produto });
     return res.status(201).json(lote);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
@@ -50,6 +52,7 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
       where: { id },
       data: { ...data, dataFabricacao: new Date(data.dataFabricacao) },
     });
+    auditLog(req, 'EDITAR', 'LOTE', lote.id, { codigo: lote.codigo, produto: lote.produto });
     return res.json(lote);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
@@ -60,7 +63,9 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
 
 router.delete('/:id', requirePerfil('ANALISTA'), async (req, res) => {
   try {
-    await prisma.lote.delete({ where: { id: parseInt(req.params.id) } });
+    const id = parseInt(req.params.id);
+    await prisma.lote.delete({ where: { id } });
+    auditLog(req, 'EXCLUIR', 'LOTE', id, null);
     return res.status(204).send();
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Lote não encontrado' });

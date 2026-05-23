@@ -8,6 +8,7 @@ import Analises from './pages/Analises'
 import Fichas from './pages/Fichas'
 import Coletas from './pages/Coletas'
 import Lotes from './pages/Lotes'
+import Logs from './pages/Logs'
 
 function PrivatePage({ children }: { children: ReactNode }) {
   return (
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/fichas" element={<PrivatePage><Fichas /></PrivatePage>} />
         <Route path="/coletas" element={<PrivatePage><Coletas /></PrivatePage>} />
         <Route path="/lotes" element={<PrivatePage><Lotes /></PrivatePage>} />
+        <Route path="/logs" element={<PrivatePage><Logs /></PrivatePage>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
