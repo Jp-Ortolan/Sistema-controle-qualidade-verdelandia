@@ -1,99 +1,131 @@
 @import "tailwindcss";
 
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; padding: 0; }
 
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
+/* ═══════════════════════════════════════════════
+   CSS Custom Properties
+   :root        → tema claro (padrão)
+   body.dark-theme → tema escuro
+═══════════════════════════════════════════════ */
 
-/* ── CSS Custom Properties ── */
 :root {
-  --bg-page: #09090b;
-  --bg-header: rgba(9, 9, 11, 0.92);
-  --bg-sidebar: #09090b;
-  --bg-card: #18181b;
-  --bg-card-2: rgba(24, 24, 27, 0.6);
-  --bg-input: rgba(39, 39, 42, 0.6);
-  --bg-row-alt: rgba(24, 24, 27, 0.4);
-  --border: #3f3f46;
-  --border-light: #27272a;
-  --text-1: #e4e4e7;
-  --text-2: #a1a1aa;
-  --text-3: #71717a;
-  --text-4: #52525b;
-  --scrollbar-track: #18181b;
-  --scrollbar-thumb: #3f3f46;
+  /* Semantic tokens – light */
+  --bg-primary:     #f5f5f5;
+  --bg-secondary:   #ffffff;
+  --bg-card:        #ffffff;
+  --bg-header:      rgba(255, 255, 255, 0.97);
+  --bg-sidebar:     #ffffff;
+  --text-primary:   #1a1a1a;
+  --text-secondary: #333333;
+  --text-muted:     #888888;
+  --input-bg:       #ffffff;
+  --input-border:   #cccccc;
+  --border-color:   #e0e0e0;
+  --shadow-card:    0 1px 4px rgba(0,0,0,0.08);
+
+  /* Zinc scale – inverted para tema claro.
+     Tailwind v4 gera utilities como var(--color-zinc-*),
+     então sobrescrever aqui tematiza tudo automaticamente. */
+  --color-zinc-950: #f5f5f5;   /* bg página */
+  --color-zinc-900: #ffffff;   /* bg card / modal */
+  --color-zinc-800: #e8e8e8;   /* borda sutil / bg input */
+  --color-zinc-700: #cccccc;   /* borda visível */
+  --color-zinc-600: #aaaaaa;   /* texto muito muted */
+  --color-zinc-500: #888888;   /* placeholder / muted */
+  --color-zinc-400: #555555;   /* labels */
+  --color-zinc-300: #444444;   /* texto secundário */
+  --color-zinc-200: #333333;   /* texto médio */
+  --color-zinc-100: #1a1a1a;   /* texto primário */
+  --color-zinc-50:  #111111;   /* texto máximo */
 }
 
-body.light-theme {
-  --bg-page: #f3f4f6;
-  --bg-header: rgba(255, 255, 255, 0.96);
-  --bg-sidebar: #ffffff;
-  --bg-card: #ffffff;
-  --bg-card-2: rgba(249, 250, 251, 0.9);
-  --bg-input: rgba(249, 250, 251, 0.9);
-  --bg-row-alt: rgba(243, 244, 246, 0.6);
-  --border: #e5e7eb;
-  --border-light: #f3f4f6;
-  --text-1: #111827;
-  --text-2: #374151;
-  --text-3: #6b7280;
-  --text-4: #9ca3af;
-  --scrollbar-track: #e5e7eb;
-  --scrollbar-thumb: #d1d5db;
-  background-color: #f3f4f6;
-  color: #111827;
+body.dark-theme {
+  /* Semantic tokens – dark */
+  --bg-primary:     #0f1117;
+  --bg-secondary:   #1a1d24;
+  --bg-card:        #1a1d24;
+  --bg-header:      rgba(15, 17, 23, 0.92);
+  --bg-sidebar:     #0f1117;
+  --text-primary:   #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --text-muted:     #6b7280;
+  --input-bg:       #2a2d35;
+  --input-border:   #3a3d45;
+  --border-color:   #2a2d35;
+  --shadow-card:    none;
+
+  /* Zinc scale – dark */
+  --color-zinc-950: #0f1117;
+  --color-zinc-900: #1a1d24;
+  --color-zinc-800: #2a2d35;
+  --color-zinc-700: #3a3d45;
+  --color-zinc-600: #52525b;
+  --color-zinc-500: #71717a;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-300: #c4c4c4;
+  --color-zinc-200: #d0d0d0;
+  --color-zinc-100: #e0e0e0;
+  --color-zinc-50:  #f0f0f0;
 }
 
+/* ══ Base ══ */
 body {
   font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-page);
-  color: var(--text-1);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .font-serif {
   font-family: 'Cormorant Garamond', serif;
 }
 
-/* ── Light-theme Tailwind overrides ── */
-body.light-theme .bg-\[\#09090b\] { background-color: var(--bg-page) !important; }
-body.light-theme .bg-zinc-950 { background-color: #ffffff !important; }
-body.light-theme .bg-zinc-950\/90 { background-color: rgba(255,255,255,0.96) !important; }
-body.light-theme .bg-zinc-900 { background-color: #f9fafb !important; }
-body.light-theme .bg-zinc-900\/60 { background-color: rgba(255,255,255,0.9) !important; }
-body.light-theme .bg-zinc-900\/50 { background-color: rgba(249,250,251,0.85) !important; }
-body.light-theme .bg-zinc-900\/40 { background-color: rgba(243,244,246,0.7) !important; }
-body.light-theme .bg-zinc-800 { background-color: #f3f4f6 !important; }
-body.light-theme .bg-zinc-800\/60 { background-color: rgba(249,250,251,0.9) !important; }
-body.light-theme .bg-zinc-800\/40 { background-color: rgba(243,244,246,0.6) !important; }
+/* ══ Inputs, textareas, selects — garante contraste em ambos os temas ══ */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--input-border) !important;
+}
 
-body.light-theme .border-zinc-800 { border-color: #e5e7eb !important; }
-body.light-theme .border-zinc-700 { border-color: #d1d5db !important; }
-body.light-theme .border-zinc-700\/60 { border-color: rgba(209,213,219,0.6) !important; }
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 1;
+}
 
-body.light-theme .text-zinc-100 { color: #111827 !important; }
-body.light-theme .text-zinc-200 { color: #1f2937 !important; }
-body.light-theme .text-zinc-300 { color: #374151 !important; }
-body.light-theme .text-zinc-400 { color: #4b5563 !important; }
-body.light-theme .text-zinc-500 { color: #6b7280 !important; }
-body.light-theme .text-zinc-600 { color: #9ca3af !important; }
+/* ══ Labels ══ */
+label {
+  color: var(--text-secondary) !important;
+}
 
-body.light-theme .hover\:bg-zinc-800\/40:hover { background-color: rgba(229,231,235,0.6) !important; }
-body.light-theme .hover\:bg-zinc-800:hover { background-color: #f3f4f6 !important; }
-body.light-theme .hover\:bg-zinc-700:hover { background-color: #e5e7eb !important; }
-body.light-theme .hover\:text-zinc-200:hover { color: #111827 !important; }
-body.light-theme .hover\:text-zinc-300:hover { color: #374151 !important; }
+/* ══ Tabela — células ══ */
+tbody td {
+  color: var(--text-primary);
+}
 
-body.light-theme .even\:bg-zinc-900\/40:nth-child(even) { background-color: rgba(243,244,246,0.6) !important; }
+/* Alternância de linhas no tema claro */
+body:not(.dark-theme) tbody tr:nth-child(odd) td  { background-color: #ffffff; }
+body:not(.dark-theme) tbody tr:nth-child(even) td { background-color: #f9f9f9; }
+body:not(.dark-theme) tbody td { border-color: #e8e8e8 !important; }
 
-/* Scrollbar */
+/* ══ Cards — aplica sombra no tema claro ══ */
+body:not(.dark-theme) .rounded-xl.border,
+body:not(.dark-theme) .rounded-2xl.border {
+  box-shadow: var(--shadow-card);
+}
+
+/* ══ Modais ══ */
+body:not(.dark-theme) [role="dialog"],
+body:not(.dark-theme) .shadow-2xl {
+  background-color: #ffffff;
+}
+
+/* ══ Scrollbar ══ */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--scrollbar-track); }
-::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #52525b; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

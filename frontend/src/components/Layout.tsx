@@ -7,24 +7,28 @@ import {
 import { getPerfil, can } from '../lib/permissions'
 
 const ALL_NAV = [
-  { to: '/dashboard', icon: BarChart3, label: 'Dashboard', resource: null },
-  { to: '/lotes', icon: Layers, label: 'Lotes', resource: 'lotes' as const },
-  { to: '/analises', icon: FlaskConical, label: 'Análises de Erva-Mate', resource: 'analises' as const },
-  { to: '/fichas', icon: Package, label: 'Fichas de Embalagem', resource: 'fichas' as const },
-  { to: '/coletas', icon: ClipboardList, label: 'Coletas de Amostra', resource: 'coletas' as const },
-  { to: '/logs', icon: ScrollText, label: 'Logs de Auditoria', resource: 'logs' as const },
+  { to: '/dashboard', icon: BarChart3,    label: 'Dashboard',            resource: null },
+  { to: '/lotes',     icon: Layers,       label: 'Lotes',                resource: 'lotes'    as const },
+  { to: '/analises',  icon: FlaskConical, label: 'Análises de Erva-Mate',resource: 'analises' as const },
+  { to: '/fichas',    icon: Package,      label: 'Fichas de Embalagem',  resource: 'fichas'   as const },
+  { to: '/coletas',   icon: ClipboardList,label: 'Coletas de Amostra',   resource: 'coletas'  as const },
+  { to: '/logs',      icon: ScrollText,   label: 'Logs de Auditoria',    resource: 'logs'     as const },
 ]
 
 export default function Layout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
-  const [isDark, setIsDark] = useState(() => localStorage.getItem('scq_theme') !== 'light')
-  const navigate = useNavigate()
-  const location = useLocation()
-  const perfil = getPerfil()
-  const user = JSON.parse(localStorage.getItem('scq_user') ?? '{}') as { email?: string; perfil?: string }
 
+  // isDark = true por padrão (dark-theme aplicado via classe no body)
+  const [isDark, setIsDark] = useState(() => localStorage.getItem('scq_theme') !== 'light')
+
+  const navigate  = useNavigate()
+  const location  = useLocation()
+  const perfil    = getPerfil()
+  const user      = JSON.parse(localStorage.getItem('scq_user') ?? '{}') as { email?: string; perfil?: string }
+
+  // Aplica/remove a classe .dark-theme no body
   useEffect(() => {
-    document.body.classList.toggle('light-theme', !isDark)
+    document.body.classList.toggle('dark-theme', isDark)
   }, [isDark])
 
   function toggleTheme() {
@@ -34,7 +38,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   }
 
   const nav = ALL_NAV.filter((n) => n.resource === null || can.view(n.resource, perfil))
-  const pageTitle = ALL_NAV.find((n) => location.pathname.startsWith(n.to) && n.to !== '/dashboard')?.label
+  const pageTitle =
+    ALL_NAV.find((n) => location.pathname.startsWith(n.to) && n.to !== '/dashboard')?.label
     ?? (location.pathname === '/dashboard' ? 'Dashboard' : 'SCQ')
 
   function logout() {
@@ -43,15 +48,15 @@ export default function Layout({ children }: { children: ReactNode }) {
     navigate('/login')
   }
 
-  const headerBg = isDark ? 'bg-zinc-950/90 border-zinc-800' : 'bg-white/96 border-gray-200 shadow-sm'
-  const sidebarBg = isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-gray-200'
-  const pageWrap = isDark ? 'bg-[#09090b]' : 'bg-gray-100'
-
   return (
-    <div className={`min-h-dvh flex flex-col ${pageWrap}`}>
+    /* Wrapper — fundo via CSS var */
+    <div className="min-h-dvh flex flex-col" style={{ backgroundColor: 'var(--bg-primary)' }}>
 
       {/* ── Topbar ── */}
-      <header className={`sticky top-0 z-40 flex items-center gap-3 border-b px-4 py-2.5 backdrop-blur-md ${headerBg}`}>
+      <header
+        className="sticky top-0 z-40 flex items-center gap-3 border-b px-4 py-2.5 backdrop-blur-md"
+        style={{ backgroundColor: 'var(--bg-header)', borderColor: 'var(--border-color)' }}
+      >
         <button
           onClick={() => setOpen((v) => !v)}
           className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition"
@@ -68,10 +73,12 @@ export default function Layout({ children }: { children: ReactNode }) {
 
         <div className="mx-3 hidden sm:block h-6 w-px bg-zinc-700" />
 
-        <span className="text-sm font-semibold text-zinc-300 hidden sm:block truncate max-w-[200px]">{pageTitle}</span>
+        <span className="text-sm font-semibold text-zinc-300 hidden sm:block truncate max-w-[200px]">
+          {pageTitle}
+        </span>
 
         <div className="ml-auto flex items-center gap-2">
-          {/* Theme toggle */}
+          {/* Toggle tema */}
           <button
             onClick={toggleTheme}
             title={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
@@ -94,23 +101,40 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* ── Sidebar overlay ── */}
-      {open && <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />}
+      {/* ── Overlay da sidebar ── */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          onClick={() => setOpen(false)}
+        />
+      )}
 
       {/* ── Sidebar ── */}
-      <aside className={`fixed left-0 top-0 z-50 flex h-full w-68 flex-col border-r shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full'} ${sidebarBg}`}>
-
-        <div className="flex items-center gap-3 border-b border-zinc-800 px-4 py-3">
+      <aside
+        className={`fixed left-0 top-0 z-50 flex h-full w-68 flex-col border-r shadow-2xl transition-transform duration-300 ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        style={{ backgroundColor: 'var(--bg-sidebar)', borderColor: 'var(--border-color)' }}
+      >
+        {/* Cabeçalho da sidebar */}
+        <div
+          className="flex items-center gap-3 border-b px-4 py-3"
+          style={{ borderColor: 'var(--border-color)' }}
+        >
           <img src="/logo_verdelandia.png" alt="Verdelândia" className="h-9 w-auto object-contain" />
           <div className="min-w-0">
             <p className="font-serif text-sm font-bold text-zinc-100 truncate">Verdelândia</p>
             <p className="text-[9px] text-zinc-500 leading-tight">Sistema de Controle de Qualidade</p>
           </div>
-          <button onClick={() => setOpen(false)} className="ml-auto rounded-lg p-1 text-zinc-500 hover:text-zinc-300 transition">
+          <button
+            onClick={() => setOpen(false)}
+            className="ml-auto rounded-lg p-1 text-zinc-500 hover:text-zinc-300 transition"
+          >
             <X size={18} />
           </button>
         </div>
 
+        {/* Navegação */}
         <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
           {nav.map(({ to, icon: Icon, label }) => (
             <NavLink
@@ -118,10 +142,10 @@ export default function Layout({ children }: { children: ReactNode }) {
               to={to}
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition border ${
                   isActive
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-600/40'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border border-transparent'
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-600/40'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border-transparent'
                 }`
               }
             >
@@ -131,8 +155,14 @@ export default function Layout({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <div className="border-t border-zinc-800 px-4 py-3">
-          <p className="text-[10px] text-zinc-600 mb-0.5 font-medium uppercase tracking-wide">Conectado como</p>
+        {/* Rodapé da sidebar */}
+        <div
+          className="border-t px-4 py-3"
+          style={{ borderColor: 'var(--border-color)' }}
+        >
+          <p className="text-[10px] text-zinc-500 mb-0.5 font-medium uppercase tracking-wide">
+            Conectado como
+          </p>
           <p className="text-sm font-semibold text-zinc-200 truncate">{user.email}</p>
           <p className="text-xs text-emerald-500 font-medium mb-2">{user.perfil}</p>
           <button
@@ -144,7 +174,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* ── Main ── */}
+      {/* ── Conteúdo principal ── */}
       <main className="flex-1 px-4 py-6 sm:px-6 max-w-6xl mx-auto w-full">
         {children}
       </main>
