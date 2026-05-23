@@ -174,6 +174,10 @@ export const api = {
     create: (data: AnaliseInput) => request<Analise>('/analises', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: number, data: AnaliseInput) => request<Analise>(`/analises/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) => request<void>(`/analises/${id}`, { method: 'DELETE' }),
+    exportarExcel: (filters?: { nomeProdutor?: string; dataInicio?: string; dataFim?: string }) =>
+      fetch(`${BASE}/analises/exportar/excel${buildParams(filters ?? {})}`, { headers: authHeaders() }),
+    exportarPdf: (filters?: { nomeProdutor?: string; dataInicio?: string; dataFim?: string }) =>
+      fetch(`${BASE}/analises/exportar/pdf${buildParams(filters ?? {})}`, { headers: authHeaders() }),
   },
 
   fichas: {

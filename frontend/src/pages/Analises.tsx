@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import { Plus, X, Loader2, Search, Pencil, Trash2, Copy } from 'lucide-react'
+import { Plus, X, Loader2, Search, Pencil, Trash2, Copy, FileSpreadsheet, FileText } from 'lucide-react'
 import { api, type Analise, type Lote } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 
@@ -187,20 +187,64 @@ export default function Analises() {
   const previewDesconto = !isNaN(pct) ? descontoLabel(pct) + '%' : '—'
   const showActions = canWrite || canDel || canExport
 
+  const canExportExcel = perfil === 'ANALISTA' || perfil === 'GESTOR'
+  const canExportPdf   = perfil === 'ANALISTA' || perfil === 'GESTOR' || perfil === 'COMPRAS'
+
+  async function handleExport(tipo: 'excel' | 'pdf') {
+    try {
+      const f = {
+        nomeProdutor: filters.nomeProdutor || undefined,
+        dataInicio: filters.dataInicio || undefined,
+        dataFim: filters.dataFim || undefined,
+      }
+      const res = tipo === 'excel'
+        ? await api.analises.exportarExcel(f)
+        : await api.analises.exportarPdf(f)
+      if (!res.ok) throw new Error()
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = tipo === 'excel' ? 'analises.xlsx' : 'analises.pdf'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setToast({ msg: `Erro ao exportar ${tipo.toUpperCase()}`, type: 'err' })
+    }
+  }
+
   return (
     <div>
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-serif text-2xl font-semibold text-zinc-100">Análises de Erva-Mate</h1>
-        {canWrite && (
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500"
-          >
-            <Plus size={16} /> Nova Análise
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {canExportPdf && (
+            <button
+              onClick={() => handleExport('pdf')}
+              className="flex items-center gap-2 rounded-xl border border-red-600/30 bg-red-600/10 px-3 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-600/20"
+            >
+              <FileText size={15} /> Exportar PDF
+            </button>
+          )}
+          {canExportExcel && (
+            <button
+              onClick={() => handleExport('excel')}
+              className="flex items-center gap-2 rounded-xl border border-emerald-600/30 bg-emerald-600/10 px-3 py-2 text-sm font-semibold text-emerald-400 transition hover:bg-emerald-600/20"
+            >
+              <FileSpreadsheet size={15} /> Exportar Excel
+            </button>
+          )}
+          {canWrite && (
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500"
+            >
+              <Plus size={16} /> Nova Análise
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filtros */}

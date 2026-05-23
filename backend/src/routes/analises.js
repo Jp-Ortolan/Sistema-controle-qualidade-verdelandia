@@ -49,6 +49,133 @@ router.get('/', async (req, res) => {
   } catch { return res.status(500).json({ error: 'Erro ao buscar análises' }); }
 });
 
+// ── Exportar Excel ─────────────────────────────────────────────────────
+router.get('/exportar/excel', requirePerfil('ANALISTA', 'GESTOR'), async (req, res) => {
+  try {
+    const { nomeProdutor, dataInicio, dataFim } = req.query;
+    const where = {};
+    if (nomeProdutor) where.nomeProdutor = { contains: nomeProdutor, mode: 'insensitive' };
+    const dr = buildDateRange(dataInicio, dataFim);
+    if (dr) where.createdAt = dr;
+    const analises = await prisma.analise.findMany({ where, include: INCLUDE, orderBy: { createdAt: 'desc' } });
+
+    const XLSX = require('xlsx');
+    const rows = analises.map((a) => ({
+      'Ticket': a.ticket ?? '—',
+      'Produtor': a.nomeProdutor || '—',
+      'Lote': a.lote?.codigo ?? '—',
+      'Data Análise': a.dataAnalise ? new Date(a.dataAnalise).toLocaleDateString('pt-BR') : '—',
+      'Data Fabricação': a.dataFabricacao ? new Date(a.dataFabricacao).toLocaleDateString('pt-BR') : '—',
+      'Palito (%)': a.percentualPalito,
+      'Pó (%)': a.teorPo ?? '',
+      'Umidade (%)': a.umidade ?? '',
+      'Desconto (%)': a.desconto,
+      'Observação': a.observacao ?? '',
+    }));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      { wch: 10 }, { wch: 28 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
+      { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 12 }, { wch: 30 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'Análises');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=analises.xlsx');
+    return res.send(buffer);
+  } catch (err) {
+    console.error('[analises/excel]', err?.message);
+    return res.status(500).json({ error: 'Erro ao gerar Excel' });
+  }
+});
+
+// ── Exportar PDF ────────────────────────────────────────────────────────
+router.get('/exportar/pdf', requirePerfil('ANALISTA', 'GESTOR', 'COMPRAS'), async (req, res) => {
+  try {
+    const { nomeProdutor, dataInicio, dataFim } = req.query;
+    const where = {};
+    if (nomeProdutor) where.nomeProdutor = { contains: nomeProdutor, mode: 'insensitive' };
+    const dr = buildDateRange(dataInicio, dataFim);
+    if (dr) where.createdAt = dr;
+    const analises = await prisma.analise.findMany({ where, include: INCLUDE, orderBy: { createdAt: 'desc' } });
+
+    const pdfMake = require('pdfmake/build/pdfmake');
+    const pdfFonts = require('pdfmake/build/vfs_fonts');
+    pdfMake.vfs = pdfFonts;
+
+    const emissao = new Date().toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit',
+      year: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+
+    const fmt = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+    const COLS = ['Ticket', 'Produtor', 'Lote', 'Dt. Análise', 'Dt. Fabric.', 'Palito %', 'Pó %', 'Umid. %', 'Desc. %', 'Observação'];
+
+    const headerRow = COLS.map((h) => ({
+      text: h, bold: true, fillColor: '#065f46', color: '#fff',
+      fontSize: 7, alignment: 'center', margin: [2, 3, 2, 3],
+    }));
+
+    const dataRows = analises.map((a, i) => {
+      const bg = i % 2 === 0 ? '#f0fdf4' : '#ffffff';
+      return [
+        { text: a.ticket ?? '—', fontSize: 7, alignment: 'center', fillColor: bg },
+        { text: a.nomeProdutor || '—', fontSize: 7, fillColor: bg },
+        { text: a.lote?.codigo ?? '—', fontSize: 7, alignment: 'center', fillColor: bg },
+        { text: fmt(a.dataAnalise), fontSize: 7, alignment: 'center', fillColor: bg },
+        { text: fmt(a.dataFabricacao), fontSize: 7, alignment: 'center', fillColor: bg },
+        { text: `${a.percentualPalito}%`, fontSize: 7, alignment: 'center', fillColor: bg },
+        { text: a.teorPo != null ? `${a.teorPo}%` : '—', fontSize: 7, alignment: 'center', fillColor: bg },
+        { text: a.umidade != null ? `${a.umidade}%` : '—', fontSize: 7, alignment: 'center', fillColor: bg },
+        { text: `${a.desconto}%`, fontSize: 7, alignment: 'center', fillColor: bg },
+        { text: a.observacao ?? '', fontSize: 7, fillColor: bg },
+      ];
+    });
+
+    const docDefinition = {
+      pageSize: 'A4',
+      pageOrientation: 'landscape',
+      pageMargins: [30, 40, 30, 40],
+      content: [
+        {
+          columns: [
+            { text: 'INDÚSTRIA ERVATEIRA VERDELÂNDIA LTDA', style: 'empresa', width: '*' },
+            { text: `Emissão: ${emissao}`, fontSize: 8, color: '#6b7280', alignment: 'right', width: 'auto' },
+          ],
+          margin: [0, 0, 0, 2],
+        },
+        { text: 'Relatório de Análises de Erva-Mate', style: 'titulo', margin: [0, 0, 0, 6] },
+        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 780, y2: 0, lineWidth: 1, lineColor: '#065f46' }], margin: [0, 0, 0, 10] },
+        {
+          table: {
+            headerRows: 1,
+            widths: [40, '*', 42, 48, 48, 32, 28, 32, 30, '*'],
+            body: [headerRow, ...dataRows],
+          },
+          layout: 'lightHorizontalLines',
+        },
+        {
+          text: `Total de registros: ${analises.length}`,
+          fontSize: 8, color: '#6b7280', margin: [0, 10, 0, 0], alignment: 'right',
+        },
+      ],
+      styles: {
+        empresa: { fontSize: 11, bold: true },
+        titulo: { fontSize: 13, bold: true, color: '#065f46' },
+      },
+    };
+
+    pdfMake.createPdf(docDefinition).getBuffer((buffer) => {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=analises.pdf');
+      res.end(buffer);
+    });
+  } catch (err) {
+    console.error('[analises/pdf]', err?.message);
+    if (!res.headersSent) return res.status(500).json({ error: 'Erro ao gerar PDF' });
+  }
+});
+
 router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
   try {
     const d = analiseSchema.parse(req.body);
