@@ -1,0 +1,13 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "node src/server.js"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+
+[[deploy.preDeployCommands]]
+command = "npx prisma db push"
+
+[[deploy.preDeployCommands]]
+command = "node prisma/seed.js"
