@@ -10,6 +10,7 @@ async function main() {
   await prisma.user.upsert({ where: { email: 'analista@scq.com' }, update: {}, create: { email: 'analista@scq.com', senhaHash: await hash('123456'), perfil: 'ANALISTA' } });
   await prisma.user.upsert({ where: { email: 'compras@scq.com' }, update: {}, create: { email: 'compras@scq.com', senhaHash: await hash('123456'), perfil: 'COMPRAS' } });
   await prisma.user.upsert({ where: { email: 'compra@scq.com' }, update: {}, create: { email: 'compra@scq.com', senhaHash: await hash('123456'), perfil: 'COMPRA_MATERIA_PRIMA' } });
+  await prisma.user.upsert({ where: { email: 'gestor@scq.com' }, update: {}, create: { email: 'gestor@scq.com', senhaHash: await hash('123456'), perfil: 'GESTOR' } });
 
   // Lotes
   const l1 = await prisma.lote.upsert({ where: { codigo: 'L2026001' }, update: {}, create: { codigo: 'L2026001', produto: 'NATURAL', dataFabricacao: new Date('2026-01-10') } });

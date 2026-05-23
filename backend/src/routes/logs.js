@@ -5,7 +5,7 @@ const { requirePerfil } = require('../middleware/perfil');
 
 const router = express.Router();
 router.use(auth);
-router.use(requirePerfil('ANALISTA'));
+router.use(requirePerfil('GESTOR'));
 
 router.get('/', async (req, res) => {
   try {
