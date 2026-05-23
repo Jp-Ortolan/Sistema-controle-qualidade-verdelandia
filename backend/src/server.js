@@ -5,11 +5,19 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors({
-  origin: [
-    'https://sistema-controle-qualidade-verdelan.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:3333',
-  ],
+  origin: function(origin, callback) {
+    const allowed = [
+      'https://sistema-controle-qualidade-verdelan.vercel.app',
+      'https://sistema-controle-qualidade-verdelandia.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3333',
+    ];
+    if (!origin || allowed.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json());
