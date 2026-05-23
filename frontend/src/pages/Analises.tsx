@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { Plus, X, Loader2, Search, Pencil, Trash2, Copy } from 'lucide-react'
-import { api, type Analise, type Produtor, type Lote } from '../services/api'
+import { api, type Analise, type Lote } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 
 function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClose: () => void }) {
@@ -26,8 +26,7 @@ function formatDate(s: string): string {
 const TODAY = new Date().toISOString().split('T')[0]
 
 const EMPTY_FORM = {
-  produtorId: '',
-  ticket: '',
+  nomeProdutor: '',
   loteId: '',
   dataAnalise: TODAY,
   dataFabricacao: '',
@@ -57,7 +56,6 @@ export default function Analises() {
   const canExport = can.export('analises', perfil)
 
   const [analises, setAnalises] = useState<Analise[]>([])
-  const [produtores, setProdutores] = useState<Produtor[]>([])
   const [lotes, setLotes] = useState<Lote[]>([])
   const [loading, setLoading] = useState(true)
   const [editingItem, setEditingItem] = useState<Analise | null>(null)
@@ -65,24 +63,22 @@ export default function Analises() {
   const [saving, setSaving] = useState(false)
   const [confirmId, setConfirmId] = useState<number | null>(null)
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
-  const [filters, setFilters] = useState({ produtorId: '', dataInicio: '', dataFim: '' })
+  const [filters, setFilters] = useState({ nomeProdutor: '', dataInicio: '', dataFim: '' })
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<FormErrors>({})
 
   async function load() {
     setLoading(true)
     try {
-      const [a, p, l] = await Promise.all([
+      const [a, l] = await Promise.all([
         api.analises.list({
-          produtorId: filters.produtorId || undefined,
+          nomeProdutor: filters.nomeProdutor || undefined,
           dataInicio: filters.dataInicio || undefined,
           dataFim: filters.dataFim || undefined,
         }),
-        api.produtores.list(),
         api.lotes.list(),
       ])
       setAnalises(a)
-      setProdutores(p)
       setLotes(l)
     } catch {
       setToast({ msg: 'Erro ao carregar dados', type: 'err' })
@@ -103,8 +99,7 @@ export default function Analises() {
   function openEdit(a: Analise) {
     setEditingItem(a)
     setForm({
-      produtorId: String(a.produtorId),
-      ticket: a.ticket ?? '',
+      nomeProdutor: a.nomeProdutor,
       loteId: a.loteId ? String(a.loteId) : '',
       dataAnalise: a.dataAnalise.split('T')[0],
       dataFabricacao: a.dataFabricacao ? a.dataFabricacao.split('T')[0] : '',
@@ -119,7 +114,7 @@ export default function Analises() {
 
   function validate(): boolean {
     const errs: FormErrors = {}
-    if (!form.produtorId) errs.produtorId = 'Produtor é obrigatório'
+    if (!form.nomeProdutor.trim()) errs.nomeProdutor = 'Nome do produtor é obrigatório'
     if (!form.dataAnalise) errs.dataAnalise = 'Data da análise é obrigatória'
     if (!form.percentualPalito) errs.percentualPalito = 'Teor de palito é obrigatório'
     setErrors(errs)
@@ -131,9 +126,8 @@ export default function Analises() {
     if (!validate()) return
     setSaving(true)
     const payload = {
-      produtorId: parseInt(form.produtorId),
+      nomeProdutor: form.nomeProdutor.trim(),
       loteId: form.loteId ? parseInt(form.loteId) : null,
-      ticket: form.ticket.trim() || null,
       dataAnalise: form.dataAnalise,
       dataFabricacao: form.dataFabricacao || null,
       percentualPalito: parseFloat(form.percentualPalito),
@@ -172,8 +166,8 @@ export default function Analises() {
 
   function handleCopy(a: Analise) {
     const text = [
-      `Análise #${a.id}`,
-      `Produtor: ${a.produtor.nome}`,
+      `Análise ${a.ticket ?? `#${a.id}`}`,
+      `Produtor: ${a.nomeProdutor}`,
       `Data: ${formatDate(a.dataAnalise)}`,
       `Palito: ${a.percentualPalito}% → Desconto: ${a.desconto}%`,
       a.teorPo != null ? `Teor de Pó: ${a.teorPo}%` : '',
@@ -188,7 +182,6 @@ export default function Analises() {
 
   const pct = parseFloat(form.percentualPalito)
   const previewDesconto = !isNaN(pct) ? descontoLabel(pct) + '%' : '—'
-
   const showActions = canWrite || canDel || canExport
 
   return (
@@ -209,14 +202,12 @@ export default function Analises() {
 
       {/* Filtros */}
       <div className="mb-5 flex flex-wrap gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-        <select
-          value={filters.produtorId}
-          onChange={(e) => setFilters((f) => ({ ...f, produtorId: e.target.value }))}
-          className="min-w-[180px] flex-1 rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
-        >
-          <option value="">Todos os produtores</option>
-          {produtores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-        </select>
+        <input
+          value={filters.nomeProdutor}
+          onChange={(e) => setFilters((f) => ({ ...f, nomeProdutor: e.target.value }))}
+          placeholder="Buscar por produtor..."
+          className="min-w-[180px] flex-1 rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-emerald-500"
+        />
         <input
           type="date"
           value={filters.dataInicio}
@@ -248,31 +239,28 @@ export default function Analises() {
 
             <div className="flex-1 overflow-y-auto px-6 py-5">
               <form id="analise-form" onSubmit={handleSubmit} className="space-y-4">
-                {/* Produtor */}
+
+                {/* Ticket (somente visualização em edição) */}
+                {editingItem?.ticket && (
+                  <div className="rounded-xl border border-emerald-800/50 bg-emerald-900/20 px-4 py-2.5 flex items-center gap-3">
+                    <span className="text-xs text-zinc-500">Ticket</span>
+                    <span className="font-mono text-sm font-bold text-emerald-400">{editingItem.ticket}</span>
+                    <span className="ml-auto text-[10px] text-zinc-600">gerado automaticamente</span>
+                  </div>
+                )}
+
+                {/* Nome do Produtor */}
                 <div>
                   <label className="mb-1 block text-xs font-medium text-zinc-400">
-                    Produtor<span className="ml-0.5 text-red-400">*</span>
+                    Produtor / Fornecedor<span className="ml-0.5 text-red-400">*</span>
                   </label>
-                  <select
-                    value={form.produtorId}
-                    onChange={(e) => setForm((f) => ({ ...f, produtorId: e.target.value }))}
-                    className={selectCls}
-                  >
-                    <option value="">Selecione...</option>
-                    {produtores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-                  </select>
-                  {errors.produtorId && <p className="mt-1 text-xs text-red-400">{errors.produtorId}</p>}
-                </div>
-
-                {/* Ticket */}
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-zinc-400">Nº Ticket</label>
                   <input
-                    value={form.ticket}
-                    onChange={(e) => setForm((f) => ({ ...f, ticket: e.target.value }))}
-                    placeholder="Ex: T-0042"
+                    value={form.nomeProdutor}
+                    onChange={(e) => setForm((f) => ({ ...f, nomeProdutor: e.target.value }))}
+                    placeholder="Ex: Sítio Boa Esperança"
                     className={inputCls}
                   />
+                  {errors.nomeProdutor && <p className="mt-1 text-xs text-red-400">{errors.nomeProdutor}</p>}
                 </div>
 
                 {/* Lote */}
@@ -298,7 +286,6 @@ export default function Analises() {
                     </label>
                     <input
                       type="date"
-                      max={TODAY}
                       value={form.dataAnalise}
                       onChange={(e) => setForm((f) => ({ ...f, dataAnalise: e.target.value }))}
                       className={inputCls}
@@ -316,7 +303,7 @@ export default function Analises() {
                   </div>
                 </div>
 
-                {/* Numeric fields */}
+                {/* Campos numéricos */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-zinc-400">
@@ -412,11 +399,11 @@ export default function Analises() {
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-emerald-500" /></div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-zinc-700/60 shadow-lg">
-          <table className="w-full min-w-[800px]">
+          <table className="w-full min-w-[820px]">
             <thead>
               <tr>
                 {[
-                  '#', 'Produtor', 'Ticket', 'Lote', 'Palito %', 'Teor Pó %', 'Umidade %', 'Desconto', 'Data',
+                  'Ticket', 'Produtor', 'Lote', 'Palito %', 'Teor Pó %', 'Umidade %', 'Desconto', 'Data',
                   ...(showActions ? ['Ações'] : []),
                 ].map((h) => (
                   <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>
@@ -426,15 +413,16 @@ export default function Analises() {
             <tbody>
               {analises.length === 0 ? (
                 <tr>
-                  <td colSpan={showActions ? 10 : 9} className="py-10 text-center text-sm text-zinc-600">
+                  <td colSpan={showActions ? 9 : 8} className="py-10 text-center text-sm text-zinc-600">
                     Nenhuma análise encontrada
                   </td>
                 </tr>
               ) : analises.map((a) => (
                 <tr key={a.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">{a.id}</td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">{a.produtor.nome}</td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-400">{a.ticket ?? <span className="text-zinc-600">—</span>}</td>
+                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center font-mono text-sm text-emerald-400">
+                    {a.ticket ?? <span className="text-zinc-600">—</span>}
+                  </td>
+                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">{a.nomeProdutor}</td>
                   <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-400">
                     {a.lote ? a.lote.codigo : <span className="text-zinc-600">—</span>}
                   </td>
@@ -463,29 +451,17 @@ export default function Analises() {
                       ) : (
                         <span className="flex items-center justify-center gap-2">
                           {canExport && (
-                            <button
-                              onClick={() => handleCopy(a)}
-                              className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-blue-400"
-                              title="Copiar"
-                            >
+                            <button onClick={() => handleCopy(a)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-blue-400" title="Copiar">
                               <Copy size={14} />
                             </button>
                           )}
                           {canWrite && (
-                            <button
-                              onClick={() => openEdit(a)}
-                              className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-emerald-400"
-                              title="Editar"
-                            >
+                            <button onClick={() => openEdit(a)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-emerald-400" title="Editar">
                               <Pencil size={14} />
                             </button>
                           )}
                           {canDel && (
-                            <button
-                              onClick={() => setConfirmId(a.id)}
-                              className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-red-400"
-                              title="Excluir"
-                            >
+                            <button onClick={() => setConfirmId(a.id)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-red-400" title="Excluir">
                               <Trash2 size={14} />
                             </button>
                           )}

@@ -1,13 +1,5 @@
 const BASE = `${import.meta.env.VITE_API_URL ?? ''}/api`
 
-export interface Produtor {
-  id: number
-  nome: string
-  cidade: string
-  telefone: string
-  createdAt: string
-}
-
 export interface Lote {
   id: number
   codigo: string
@@ -19,8 +11,7 @@ export interface Lote {
 
 export interface Analise {
   id: number
-  produtorId: number
-  produtor: { nome: string }
+  nomeProdutor: string
   loteId?: number | null
   lote?: { codigo: string; produto: string } | null
   ticket?: string | null
@@ -76,16 +67,20 @@ export interface AuthResponse {
 
 export interface DashboardData {
   totalAnalises: number
-  analisesHoje: number
-  mediaDesconto: number
-  mediaTeorPalito: number
-  lotesEstaSemana: number
+  analisesEstaSemana: number
   fichasConformes: number
   fichasNaoConformes: number
-  coletasEstaSemana: number
-  ultimasAnalises: Array<{ id: number; percentualPalito: number; desconto: number; createdAt: string; produtor: { nome: string } }>
+  totalColetas: number
+  ultimasAnalises: Array<{
+    id: number
+    ticket?: string | null
+    nomeProdutor: string
+    percentualPalito: number
+    desconto: number
+    createdAt: string
+  }>
   analisesPorDia: Array<{ dia: string; total: number }>
-  descontoPorProdutor: Array<{ nome: string; mediaDesconto: number }>
+  top5Produtores: Array<{ nome: string; total: number }>
 }
 
 function getToken(): string | null {
@@ -123,12 +118,16 @@ function buildParams(params: Record<string, string | undefined>): string {
   return s ? `?${s}` : ''
 }
 
-type ProdutorInput = Omit<Produtor, 'id' | 'createdAt'>
 type LoteInput = { codigo: string; produto: string; dataFabricacao: string; observacao?: string }
 type AnaliseInput = {
-  produtorId: number; loteId?: number | null; ticket?: string | null
-  dataAnalise?: string; dataFabricacao?: string | null
-  percentualPalito: number; teorPo?: number | null; umidade?: number | null; observacao?: string | null
+  nomeProdutor: string
+  loteId?: number | null
+  dataAnalise?: string
+  dataFabricacao?: string | null
+  percentualPalito: number
+  teorPo?: number | null
+  umidade?: number | null
+  observacao?: string | null
 }
 type FichaInput = { loteId?: number | null; fornecedor: string; parametros: Parametro[]; observacoes?: string | null; statusGlobal: string }
 type ColetaInput = { dataColeta: string; tipoProduto: string; destino: string }
@@ -143,13 +142,6 @@ export const api = {
     get: () => request<DashboardData>('/dashboard'),
   },
 
-  produtores: {
-    list: () => request<Produtor[]>('/produtores'),
-    create: (data: ProdutorInput) => request<Produtor>('/produtores', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: number, data: ProdutorInput) => request<Produtor>(`/produtores/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: number) => request<void>(`/produtores/${id}`, { method: 'DELETE' }),
-  },
-
   lotes: {
     list: () => request<Lote[]>('/lotes'),
     create: (data: LoteInput) => request<Lote>('/lotes', { method: 'POST', body: JSON.stringify(data) }),
@@ -158,7 +150,7 @@ export const api = {
   },
 
   analises: {
-    list: (filters?: { produtorId?: string; dataInicio?: string; dataFim?: string }) =>
+    list: (filters?: { nomeProdutor?: string; dataInicio?: string; dataFim?: string }) =>
       request<Analise[]>(`/analises${buildParams(filters ?? {})}`),
     create: (data: AnaliseInput) => request<Analise>('/analises', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: number, data: AnaliseInput) => request<Analise>(`/analises/${id}`, { method: 'PUT', body: JSON.stringify(data) }),

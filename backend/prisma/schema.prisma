@@ -15,16 +15,6 @@ model User {
   createdAt DateTime @default(now())
 }
 
-model Produtor {
-  id        Int             @id @default(autoincrement())
-  nome      String          @unique
-  cidade    String
-  telefone  String
-  createdAt DateTime        @default(now())
-  analises  Analise[]
-  coletas   ColetaAmostra[]
-}
-
 model Lote {
   id             Int              @id @default(autoincrement())
   codigo         String           @unique
@@ -38,8 +28,7 @@ model Lote {
 
 model Analise {
   id               Int       @id @default(autoincrement())
-  produtorId       Int
-  produtor         Produtor  @relation(fields: [produtorId], references: [id])
+  nomeProdutor     String
   loteId           Int?
   lote             Lote?     @relation(fields: [loteId], references: [id])
   ticket           String?
@@ -65,11 +54,9 @@ model FichaEmbalagem {
 }
 
 model ColetaAmostra {
-  id          Int       @id @default(autoincrement())
-  produtorId  Int?
-  produtor    Produtor? @relation(fields: [produtorId], references: [id])
+  id          Int      @id @default(autoincrement())
   tipoProduto String
   destino     String
   dataColeta  DateTime
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime @default(now())
 }

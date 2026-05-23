@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Leaf, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { api } from '../services/api'
 
 export default function Login() {
@@ -28,60 +28,61 @@ export default function Login() {
 
   return (
     <div className="min-h-dvh flex items-stretch">
-      {/* Left panel */}
+      {/* Painel esquerdo — logo destaque */}
       <div
-        className="hidden md:flex flex-col justify-between w-[55%] px-14 py-16 relative overflow-hidden"
-        style={{
-          background: 'radial-gradient(ellipse at 20% 30%, #11322f 0%, #091111 50%, #050607 100%)',
-        }}
+        className="hidden md:flex flex-col items-center justify-center w-[55%] px-14 py-16 relative overflow-hidden"
+        style={{ background: 'radial-gradient(ellipse at 30% 40%, #0f4d2e 0%, #091111 55%, #050607 100%)' }}
       >
+        {/* Noise overlay */}
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-20"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E")`,
           }}
         />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-16">
-            <Leaf size={28} className="text-emerald-400" />
-            <span className="text-emerald-400 text-sm font-medium tracking-widest uppercase">SCQ</span>
-          </div>
-          <h1 className="font-serif text-5xl xl:text-6xl font-semibold text-stone-100 leading-tight">
+
+        <div className="relative z-10 flex flex-col items-center text-center max-w-sm">
+          {/* Logo grande — elemento visual principal */}
+          <img
+            src="/logo_verdelandia.png"
+            alt="Verdelândia"
+            className="h-48 w-auto object-contain drop-shadow-2xl mb-8"
+          />
+
+          <h1 className="font-serif text-4xl xl:text-5xl font-semibold text-stone-100 leading-tight">
             Indústria Ervateira<br />
             <span className="text-emerald-400 italic">Verdelândia</span>
           </h1>
-          <p className="mt-6 text-stone-400 text-base max-w-sm leading-relaxed">
-            Sistema de Controle de Qualidade para rastreabilidade e análise de erva-mate, substituindo planilhas manuais.
+          <p className="mt-4 text-stone-400 text-sm max-w-xs leading-relaxed">
+            Sistema de Controle de Qualidade para rastreabilidade e análise de erva-mate.
           </p>
-        </div>
-        <div className="relative z-10 flex gap-8 text-stone-500 text-sm">
-          <div>
-            <p className="text-2xl font-bold text-emerald-400">SCQ</p>
-            <p className="text-xs">Controle de Qualidade</p>
+
+          <div className="mt-10 flex gap-10 text-stone-500 text-sm">
+            <div>
+              <p className="text-xl font-bold text-emerald-400">SCQ</p>
+              <p className="text-xs">Controle de Qualidade</p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-emerald-400">FORQSE001</p>
+              <p className="text-xs">Fichas de Embalagem</p>
+            </div>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-emerald-400">FORQSE001</p>
-            <p className="text-xs">Fichas de Embalagem</p>
-          </div>
         </div>
-        <Leaf
-          size={320}
-          className="absolute -bottom-16 -left-16 text-emerald-900/20 rotate-12"
-          strokeWidth={0.5}
-        />
+
+        {/* Brilho de fundo decorativo */}
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-emerald-900/20 to-transparent pointer-events-none" />
       </div>
 
-      {/* Right panel — login form */}
+      {/* Painel direito — formulário */}
       <div
         className="flex-1 flex items-center justify-center px-6 py-12"
-        style={{
-          background: 'radial-gradient(ellipse at 80% 70%, #11322f 0%, #050607 60%)',
-        }}
+        style={{ background: 'radial-gradient(ellipse at 80% 70%, #11322f 0%, #050607 60%)' }}
       >
         <div className="w-full max-w-sm">
-          <div className="md:hidden flex items-center gap-2 mb-8">
-            <Leaf size={24} className="text-emerald-400" />
-            <span className="font-serif text-xl font-semibold text-stone-100">Verdelândia SCQ</span>
+          {/* Logo mobile */}
+          <div className="md:hidden flex flex-col items-center mb-8 gap-3">
+            <img src="/logo_verdelandia.png" alt="Verdelândia" className="h-20 w-auto object-contain" />
+            <span className="font-serif text-lg font-semibold text-stone-100">Verdelândia SCQ</span>
           </div>
 
           <div
@@ -131,15 +132,13 @@ export default function Login() {
                     <Loader2 size={16} className="animate-spin" />
                     Entrando...
                   </span>
-                ) : (
-                  'Entrar'
-                )}
+                ) : 'Entrar'}
               </button>
             </form>
           </div>
 
           <p className="mt-6 text-center text-xs text-stone-600">
-            © 2024 Ind. Ervateira Verdelândia LTDA
+            © 2025 Ind. Ervateira Verdelândia LTDA
           </p>
         </div>
       </div>

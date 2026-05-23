@@ -1,23 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell,
   ResponsiveContainer, Legend,
 } from 'recharts'
-import { FlaskConical, Package, ClipboardList, Layers, TrendingDown, AlertCircle, Loader2 } from 'lucide-react'
+import { FlaskConical, Package, ClipboardList, Loader2 } from 'lucide-react'
 import { api, type DashboardData } from '../services/api'
-import { getPerfil, can } from '../lib/permissions'
-
-const NAV_CARDS = [
-  { to: '/analises', resource: 'analises' as const, icon: FlaskConical, title: 'Análises', desc: 'Registrar análises de palito', color: 'from-emerald-600 to-emerald-800' },
-  { to: '/fichas', resource: 'fichas' as const, icon: Package, title: 'Fichas FORQSE001', desc: 'Fichas de liberação de embalagens', color: 'from-emerald-700 to-emerald-900' },
-  { to: '/coletas', resource: 'coletas' as const, icon: ClipboardList, title: 'Coletas', desc: 'Registro de coletas de amostra', color: 'from-teal-600 to-teal-800' },
-  { to: '/lotes', resource: 'lotes' as const, icon: Layers, title: 'Lotes', desc: 'Controle de lotes de produção', color: 'from-teal-700 to-teal-900' },
-]
 
 const PIE_COLORS = ['#16a34a', '#dc2626']
 
-function StatCard({ icon: Icon, label, value, sub, color }: { icon: React.ElementType; label: string; value: string | number; sub?: string; color: string }) {
+function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: string | number; color: string }) {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
       <div className="flex items-start justify-between">
@@ -25,14 +16,11 @@ function StatCard({ icon: Icon, label, value, sub, color }: { icon: React.Elemen
         <Icon size={16} className={color} />
       </div>
       <p className="mt-2 text-3xl font-bold text-zinc-100">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-zinc-600">{sub}</p>}
     </div>
   )
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate()
-  const perfil = getPerfil()
   const user = JSON.parse(localStorage.getItem('scq_user') ?? '{}') as { email?: string; perfil?: string }
 
   const [data, setData] = useState<DashboardData | null>(null)
@@ -44,8 +32,6 @@ export default function Dashboard() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
-
-  const navCards = NAV_CARDS.filter((c) => can.view(c.resource, perfil))
 
   if (loading) {
     return (
@@ -67,7 +53,7 @@ export default function Dashboard() {
     total: d.total,
   }))
 
-  const descontoData = (data?.descontoPorProdutor ?? []).slice(0, 5)
+  const top5Data = data?.top5Produtores ?? []
 
   return (
     <div className="space-y-6">
@@ -81,26 +67,31 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Summary cards */}
+      {/* 4 cards de resumo */}
       {data && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <StatCard icon={FlaskConical} label="Total análises" value={data.totalAnalises} color="text-emerald-400" />
-          <StatCard icon={TrendingDown} label="Análises hoje" value={data.analisesHoje} color="text-teal-400" />
-          <StatCard icon={AlertCircle} label="Média desconto" value={`${data.mediaDesconto.toFixed(1)}%`} color="text-amber-400" />
-          <StatCard icon={AlertCircle} label="Média palito" value={`${data.mediaTeorPalito.toFixed(1)}%`} color="text-amber-400" />
-          <StatCard icon={Layers} label="Lotes semana" value={data.lotesEstaSemana} color="text-blue-400" />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard icon={FlaskConical} label="Total de Análises" value={data.totalAnalises} color="text-emerald-400" />
+          <StatCard icon={FlaskConical} label="Análises esta semana" value={data.analisesEstaSemana} color="text-teal-400" />
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Fichas</p>
-            <p className="mt-2 text-lg font-bold text-emerald-400">{data.fichasConformes} <span className="text-xs font-normal text-zinc-500">conf.</span></p>
-            <p className="text-lg font-bold text-red-400">{data.fichasNaoConformes} <span className="text-xs font-normal text-zinc-500">não conf.</span></p>
+            <div className="flex items-start justify-between">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Fichas</p>
+              <Package size={16} className="text-blue-400" />
+            </div>
+            <p className="mt-2 text-lg font-bold text-emerald-400">
+              {data.fichasConformes} <span className="text-xs font-normal text-zinc-500">conf.</span>
+            </p>
+            <p className="text-lg font-bold text-red-400">
+              {data.fichasNaoConformes} <span className="text-xs font-normal text-zinc-500">não conf.</span>
+            </p>
           </div>
+          <StatCard icon={ClipboardList} label="Total de Coletas" value={data.totalColetas} color="text-amber-400" />
         </div>
       )}
 
-      {/* Charts row */}
+      {/* Gráficos */}
       {data && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          {/* Bar: analyses per day */}
+          {/* Barra: análises por dia */}
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Análises por dia (7 dias)</h3>
             <ResponsiveContainer width="100%" height={180}>
@@ -117,7 +108,7 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
 
-          {/* Pie: ficha status */}
+          {/* Pizza: status fichas */}
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Status das fichas</h3>
             <ResponsiveContainer width="100%" height={180}>
@@ -127,9 +118,7 @@ export default function Dashboard() {
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Legend
-                  formatter={(value) => <span style={{ color: '#a1a1aa', fontSize: 11 }}>{value}</span>}
-                />
+                <Legend formatter={(value) => <span style={{ color: '#a1a1aa', fontSize: 11 }}>{value}</span>} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: 8, fontSize: 12 }}
                   itemStyle={{ color: '#e4e4e7' }}
@@ -138,35 +127,35 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
 
-          {/* Horizontal bar: desconto por produtor */}
+          {/* Barra horizontal: top 5 produtores por análises */}
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Top 5 desconto médio</h3>
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Top 5 produtores</h3>
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={descontoData} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 0 }}>
-                <XAxis type="number" tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} unit="%" />
+              <BarChart data={top5Data} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 0 }}>
+                <XAxis type="number" tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <YAxis type="category" dataKey="nome" tick={{ fill: '#a1a1aa', fontSize: 10 }} axisLine={false} tickLine={false} width={80} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: 8, fontSize: 12 }}
                   labelStyle={{ color: '#a1a1aa' }}
                   itemStyle={{ color: '#0d9488' }}
-                  formatter={(v) => [`${Number(v).toFixed(1)}%`, 'Desconto médio']}
+                  formatter={(v) => [v, 'Análises']}
                 />
-                <Bar dataKey="mediaDesconto" fill="#0d9488" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="total" fill="#0d9488" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
       )}
 
-      {/* Last analyses table */}
+      {/* Tabela últimas análises */}
       {data && data.ultimasAnalises.length > 0 && (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Últimas análises</h3>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[420px] text-sm">
+            <table className="w-full min-w-[480px] text-sm">
               <thead>
                 <tr>
-                  {['#', 'Produtor', 'Palito %', 'Desconto', 'Data'].map((h) => (
+                  {['Ticket', 'Produtor', 'Palito %', 'Desconto', 'Data'].map((h) => (
                     <th key={h} className="bg-emerald-900/90 px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>
                   ))}
                 </tr>
@@ -174,8 +163,8 @@ export default function Dashboard() {
               <tbody>
                 {data.ultimasAnalises.map((a) => (
                   <tr key={a.id} className="even:bg-zinc-900/40 hover:bg-zinc-800/40 transition">
-                    <td className="border-t border-zinc-800 px-4 py-2 text-center text-xs text-zinc-500">{a.id}</td>
-                    <td className="border-t border-zinc-800 px-4 py-2 text-center text-sm font-medium text-zinc-200">{a.produtor.nome}</td>
+                    <td className="border-t border-zinc-800 px-4 py-2 text-center text-xs font-mono text-emerald-400">{a.ticket ?? '—'}</td>
+                    <td className="border-t border-zinc-800 px-4 py-2 text-center text-sm font-medium text-zinc-200">{a.nomeProdutor}</td>
                     <td className="border-t border-zinc-800 px-4 py-2 text-center text-sm text-zinc-300">{a.percentualPalito}%</td>
                     <td className="border-t border-zinc-800 px-4 py-2 text-center">
                       <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${a.desconto === 0 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>
@@ -193,26 +182,9 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Navigation cards */}
-      {navCards.length > 0 && (
-        <div>
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Módulos</h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {navCards.map(({ to, icon: Icon, title, desc, color }) => (
-              <button
-                key={to}
-                onClick={() => navigate(to)}
-                className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 text-left transition hover:border-emerald-700/50 hover:bg-zinc-900"
-              >
-                <div className={`mb-4 inline-flex items-center justify-center rounded-xl bg-gradient-to-br ${color} p-3 shadow-lg`}>
-                  <Icon size={22} className="text-white" />
-                </div>
-                <h2 className="text-base font-bold text-zinc-100 transition group-hover:text-emerald-400">{title}</h2>
-                <p className="mt-1 text-sm leading-relaxed text-zinc-500">{desc}</p>
-                <div className={`absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-to-r ${color} transition-all duration-300 group-hover:w-full`} />
-              </button>
-            ))}
-          </div>
+      {!data && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-8 text-center text-zinc-500">
+          Nenhum dado disponível ainda.
         </div>
       )}
     </div>

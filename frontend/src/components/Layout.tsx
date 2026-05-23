@@ -1,11 +1,10 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { BarChart3, Users, ClipboardList, FlaskConical, Package, Menu, X, LogOut, Layers } from 'lucide-react'
+import { BarChart3, ClipboardList, FlaskConical, Package, Menu, X, LogOut, Layers } from 'lucide-react'
 import { getPerfil, can } from '../lib/permissions'
 
 const ALL_NAV = [
   { to: '/dashboard', icon: BarChart3, label: 'Dashboard', resource: null },
-  { to: '/produtores', icon: Users, label: 'Produtores', resource: 'produtores' as const },
   { to: '/lotes', icon: Layers, label: 'Lotes', resource: 'lotes' as const },
   { to: '/analises', icon: FlaskConical, label: 'Análises', resource: 'analises' as const },
   { to: '/fichas', icon: Package, label: 'Fichas de Embalagem', resource: 'fichas' as const },

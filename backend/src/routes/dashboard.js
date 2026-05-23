@@ -8,68 +8,71 @@ router.use(auth);
 router.get('/', async (_req, res) => {
   try {
     const agora = new Date();
-    const inicioDia = new Date(agora); inicioDia.setHours(0, 0, 0, 0);
-    const fimDia = new Date(agora); fimDia.setHours(23, 59, 59, 999);
-    const inicioSemana = new Date(agora); inicioSemana.setDate(agora.getDate() - 7);
+
+    const inicioSemana = new Date(agora);
+    inicioSemana.setDate(agora.getDate() - agora.getDay());
+    inicioSemana.setHours(0, 0, 0, 0);
+
+    const sete = new Date(agora);
+    sete.setDate(agora.getDate() - 6);
+    sete.setHours(0, 0, 0, 0);
 
     const [
       totalAnalises,
-      analisesHoje,
+      analisesEstaSemana,
       fichasConformes,
       fichasNaoConformes,
-      lotesEstaSemana,
-      coletasEstaSemana,
-      agregadoDesconto,
-      agregadoPalito,
+      totalColetas,
       ultimasAnalises,
+      recentRaw,
+      top5Raw,
     ] = await Promise.all([
       prisma.analise.count(),
-      prisma.analise.count({ where: { createdAt: { gte: inicioDia, lte: fimDia } } }),
+      prisma.analise.count({ where: { createdAt: { gte: inicioSemana } } }),
       prisma.fichaEmbalagem.count({ where: { statusGlobal: 'CONFORME' } }),
       prisma.fichaEmbalagem.count({ where: { statusGlobal: 'NAO_CONFORME' } }),
-      prisma.lote.count({ where: { createdAt: { gte: inicioSemana } } }),
-      prisma.coletaAmostra.count({ where: { createdAt: { gte: inicioSemana } } }),
-      prisma.analise.aggregate({ _avg: { desconto: true } }),
-      prisma.analise.aggregate({ _avg: { percentualPalito: true } }),
+      prisma.coletaAmostra.count(),
       prisma.analise.findMany({
         take: 5,
         orderBy: { createdAt: 'desc' },
-        include: { produtor: { select: { nome: true } } },
-        select: { id: true, percentualPalito: true, desconto: true, createdAt: true, produtor: { select: { nome: true } } },
+        select: { id: true, ticket: true, nomeProdutor: true, percentualPalito: true, desconto: true, createdAt: true },
+      }),
+      prisma.analise.findMany({
+        where: { createdAt: { gte: sete } },
+        select: { createdAt: true },
+      }),
+      prisma.analise.groupBy({
+        by: ['nomeProdutor'],
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 5,
       }),
     ]);
 
-    // Análises por dia (últimos 7 dias)
-    const analisesPorDia = await prisma.$queryRaw`
-      SELECT DATE("createdAt")::text AS dia, COUNT(*)::int AS total
-      FROM "Analise"
-      WHERE "createdAt" >= ${inicioSemana}
-      GROUP BY DATE("createdAt")
-      ORDER BY dia ASC
-    `;
+    // Monta mapa de análises por dia (7 dias)
+    const dayMap = new Map();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(agora);
+      d.setDate(agora.getDate() - i);
+      dayMap.set(d.toISOString().slice(0, 10), 0);
+    }
+    for (const a of recentRaw) {
+      const key = a.createdAt.toISOString().slice(0, 10);
+      if (dayMap.has(key)) dayMap.set(key, dayMap.get(key) + 1);
+    }
+    const analisesPorDia = Array.from(dayMap.entries()).map(([dia, total]) => ({ dia, total }));
 
-    // Top 5 produtores por desconto médio
-    const descontoPorProdutor = await prisma.$queryRaw`
-      SELECT p.nome, ROUND(AVG(a.desconto)::numeric, 2)::float AS mediaDesconto
-      FROM "Analise" a
-      JOIN "Produtor" p ON p.id = a."produtorId"
-      GROUP BY p.nome
-      ORDER BY mediaDesconto DESC
-      LIMIT 5
-    `;
+    const top5Produtores = top5Raw.map((r) => ({ nome: r.nomeProdutor, total: r._count.id }));
 
     return res.json({
       totalAnalises,
-      analisesHoje,
-      mediaDesconto: Number((agregadoDesconto._avg.desconto ?? 0).toFixed(2)),
-      mediaTeorPalito: Number((agregadoPalito._avg.percentualPalito ?? 0).toFixed(2)),
-      lotesEstaSemana,
+      analisesEstaSemana,
       fichasConformes,
       fichasNaoConformes,
-      coletasEstaSemana,
+      totalColetas,
       ultimasAnalises,
       analisesPorDia,
-      descontoPorProdutor,
+      top5Produtores,
     });
   } catch (err) {
     console.error('[dashboard]', err?.message);

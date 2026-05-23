@@ -8,14 +8,13 @@ const router = express.Router();
 router.use(auth);
 
 const analiseSchema = z.object({
-  produtorId: z.number().int().positive('Produtor obrigatório'),
+  nomeProdutor: z.string().min(1, 'Nome do produtor obrigatório'),
   loteId: z.number().int().positive().optional().nullable(),
-  ticket: z.string().optional().nullable(),
   dataAnalise: z.string().optional().nullable(),
   dataFabricacao: z.string().optional().nullable(),
   percentualPalito: z.number().min(0, 'Mínimo 0%').max(100, 'Máximo 100%'),
-  teorPo: z.number().min(0, 'Mínimo 0%').max(100, 'Máximo 100%').optional().nullable(),
-  umidade: z.number().min(0, 'Mínimo 0%').max(100, 'Máximo 100%').optional().nullable(),
+  teorPo: z.number().min(0).max(100).optional().nullable(),
+  umidade: z.number().min(0).max(100).optional().nullable(),
   observacao: z.string().optional().nullable(),
 });
 
@@ -26,6 +25,11 @@ function calcularDesconto(pct) {
   return 15;
 }
 
+async function gerarTicket() {
+  const count = await prisma.analise.count();
+  return `TK-${String(count + 1).padStart(4, '0')}`;
+}
+
 function buildDateRange(inicio, fim) {
   if (!inicio && !fim) return undefined;
   const range = {};
@@ -34,16 +38,13 @@ function buildDateRange(inicio, fim) {
   return range;
 }
 
-const INCLUDE = {
-  produtor: { select: { nome: true } },
-  lote: { select: { codigo: true, produto: true } },
-};
+const INCLUDE = { lote: { select: { codigo: true, produto: true } } };
 
 router.get('/', async (req, res) => {
   try {
-    const { produtorId, dataInicio, dataFim } = req.query;
+    const { nomeProdutor, dataInicio, dataFim } = req.query;
     const where = {};
-    if (produtorId) where.produtorId = parseInt(produtorId);
+    if (nomeProdutor) where.nomeProdutor = { contains: nomeProdutor, mode: 'insensitive' };
     const dr = buildDateRange(dataInicio, dataFim);
     if (dr) where.createdAt = dr;
     const analises = await prisma.analise.findMany({ where, include: INCLUDE, orderBy: { createdAt: 'desc' } });
@@ -54,11 +55,12 @@ router.get('/', async (req, res) => {
 router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
   try {
     const d = analiseSchema.parse(req.body);
+    const ticket = await gerarTicket();
     const analise = await prisma.analise.create({
       data: {
-        produtorId: d.produtorId,
+        nomeProdutor: d.nomeProdutor,
         loteId: d.loteId ?? null,
-        ticket: d.ticket ?? null,
+        ticket,
         dataAnalise: d.dataAnalise ? new Date(d.dataAnalise) : new Date(),
         dataFabricacao: d.dataFabricacao ? new Date(d.dataFabricacao) : null,
         percentualPalito: d.percentualPalito,
@@ -83,9 +85,8 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
     const analise = await prisma.analise.update({
       where: { id },
       data: {
-        produtorId: d.produtorId,
+        nomeProdutor: d.nomeProdutor,
         loteId: d.loteId ?? null,
-        ticket: d.ticket ?? null,
         dataAnalise: d.dataAnalise ? new Date(d.dataAnalise) : undefined,
         dataFabricacao: d.dataFabricacao ? new Date(d.dataFabricacao) : null,
         percentualPalito: d.percentualPalito,

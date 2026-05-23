@@ -7,7 +7,6 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/produtores', require('./routes/produtores'));
 app.use('/api/analises', require('./routes/analises'));
 app.use('/api/fichas', require('./routes/fichas'));
 app.use('/api/coletas', require('./routes/coletas'));

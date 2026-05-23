@@ -11,19 +11,14 @@ async function main() {
   await prisma.user.upsert({ where: { email: 'compras@scq.com' }, update: {}, create: { email: 'compras@scq.com', senhaHash: await hash('123456'), perfil: 'COMPRAS' } });
   await prisma.user.upsert({ where: { email: 'compra@scq.com' }, update: {}, create: { email: 'compra@scq.com', senhaHash: await hash('123456'), perfil: 'COMPRA_MATERIA_PRIMA' } });
 
-  // Produtores
-  const p1 = await prisma.produtor.upsert({ where: { nome: 'Sítio Boa Esperança' }, update: {}, create: { nome: 'Sítio Boa Esperança', cidade: 'Guarapuava', telefone: '(42) 99999-1111' } });
-  const p2 = await prisma.produtor.upsert({ where: { nome: 'Fazenda São José' }, update: {}, create: { nome: 'Fazenda São José', cidade: 'Ponta Grossa', telefone: '(42) 99999-2222' } });
-  const p3 = await prisma.produtor.upsert({ where: { nome: 'Chácara Verde' }, update: {}, create: { nome: 'Chácara Verde', cidade: 'Irati', telefone: '(42) 99999-3333' } });
-
   // Lotes
   const l1 = await prisma.lote.upsert({ where: { codigo: 'L2026001' }, update: {}, create: { codigo: 'L2026001', produto: 'NATURAL', dataFabricacao: new Date('2026-01-10') } });
   const l2 = await prisma.lote.upsert({ where: { codigo: 'L2026002' }, update: {}, create: { codigo: 'L2026002', produto: 'ABACAXI', dataFabricacao: new Date('2026-02-15') } });
   await prisma.lote.upsert({ where: { codigo: 'L2026003' }, update: {}, create: { codigo: 'L2026003', produto: 'MENTA_LIMAO', dataFabricacao: new Date('2026-03-20') } });
 
-  // Analises
-  await prisma.analise.create({ data: { produtorId: p1.id, loteId: l1.id, ticket: 'TK-001', percentualPalito: 8, teorPo: 12.5, umidade: 11.2, desconto: 5 } });
-  await prisma.analise.create({ data: { produtorId: p2.id, loteId: l2.id, ticket: 'TK-002', percentualPalito: 3, teorPo: 8.0, umidade: 9.5, desconto: 0 } });
+  // Analises (ticket gerado automaticamente, mas seed define manualmente)
+  await prisma.analise.create({ data: { nomeProdutor: 'Sítio Boa Esperança', loteId: l1.id, ticket: 'TK-0001', percentualPalito: 8, teorPo: 12.5, umidade: 11.2, desconto: 5 } });
+  await prisma.analise.create({ data: { nomeProdutor: 'Fazenda São José', loteId: l2.id, ticket: 'TK-0002', percentualPalito: 3, teorPo: 8.0, umidade: 9.5, desconto: 0 } });
 
   // Ficha (4 parâmetros fixos)
   await prisma.fichaEmbalagem.create({
@@ -40,11 +35,11 @@ async function main() {
     },
   });
 
-  // Coletas (simplificadas, sem produtorId)
+  // Coletas
   await prisma.coletaAmostra.create({ data: { tipoProduto: 'Natural', destino: 'Laboratório Interno', dataColeta: new Date('2026-05-10') } });
   await prisma.coletaAmostra.create({ data: { tipoProduto: 'Menta & Limão', destino: 'TECPAR', dataColeta: new Date('2026-05-15') } });
 
-  console.log('✅ Seed v2 concluído com sucesso!');
+  console.log('✅ Seed v3 concluído com sucesso!');
 }
 
 main()
