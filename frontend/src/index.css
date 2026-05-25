@@ -129,3 +129,23 @@ body:not(.dark-theme) .shadow-2xl {
 ::-webkit-scrollbar-track { background: var(--bg-secondary); }
 ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ══ Date inputs — mobile: sem overflow, sem min-width fixo ══ */
+input[type="date"] {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+input[type="date"]::-webkit-datetime-edit-text { color: inherit; }
+input[type="date"]::-webkit-datetime-edit { padding: 0; }
+input[type="date"]:not([value])::-webkit-datetime-edit { color: var(--text-muted); }
+
+/* ══ Inputs — 16px mínimo no mobile para evitar zoom automático do iOS ══ */
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

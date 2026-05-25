@@ -144,7 +144,7 @@ export default function Lotes() {
       {/* Modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl max-h-[90vh] overflow-y-auto p-3 min-[480px]:p-6">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-base font-bold text-zinc-100">{editingItem ? 'Editar Lote' : 'Novo Lote'}</h2>
               <button onClick={() => setShowForm(false)} className="text-zinc-500 hover:text-zinc-300"><X size={18} /></button>
@@ -191,6 +191,7 @@ export default function Lotes() {
                 </label>
                 <input
                   type="date"
+                  placeholder="dd/mm/aaaa"
                   max={TODAY}
                   value={form.dataFabricacao}
                   onChange={(e) => setForm((f) => ({ ...f, dataFabricacao: e.target.value }))}
@@ -211,7 +212,7 @@ export default function Lotes() {
                 />
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-col-reverse gap-3 pt-2 min-[380px]:flex-row">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
