@@ -22,10 +22,8 @@ const analiseSchema = z.object({
 });
 
 function calcularDesconto(pct) {
-  if (pct <= 5) return 0;
-  if (pct <= 10) return 5;
-  if (pct <= 15) return 10;
-  return 15;
+  if (pct <= 0.3) return 0;
+  return Math.round((pct - 0.3) * 0.35 * 10000) / 10000;
 }
 
 const INCLUDE = LOTE_INCLUDE;

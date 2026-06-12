@@ -13,10 +13,8 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClos
 }
 
 function descontoLabel(pct: number): string {
-  if (pct <= 5) return '0'
-  if (pct <= 10) return '5'
-  if (pct <= 15) return '10'
-  return '15'
+  if (pct <= 0.3) return '0'
+  return String(Math.round((pct - 0.3) * 0.35 * 10000) / 10000)
 }
 
 function formatDate(s: string): string {
@@ -378,7 +376,7 @@ export default function Analises() {
                     <div className="rounded-xl border border-zinc-700 bg-zinc-800/40 px-3 py-2.5">
                       <p className="text-[10px] text-zinc-500">Desconto calculado</p>
                       <p className="mt-0.5 text-lg font-bold text-emerald-400">{previewDesconto}</p>
-                      <p className="text-[9px] text-zinc-600">≤5%→0 · 6-10%→5 · 11-15%→10 · &gt;15%→15</p>
+                      <p className="text-[9px] text-zinc-600">Palito até 0,3%: sem desconto. Acima de 0,3%: desconto = (palito − 0,3) × 35%</p>
                     </div>
                   </div>
                 </div>

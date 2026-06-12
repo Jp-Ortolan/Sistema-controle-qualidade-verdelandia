@@ -1,4 +1,4 @@
-export type Perfil = 'ANALISTA' | 'COMPRAS' | 'COMPRA_MATERIA_PRIMA' | 'GESTOR'
+export type Perfil = 'ANALISTA' | 'COMPRAS' | 'GESTOR'
 export type Resource = 'analises' | 'fichas' | 'coletas' | 'lotes' | 'logs'
 
 export function getPerfil(): Perfil | null {
@@ -8,7 +8,7 @@ export function getPerfil(): Perfil | null {
 }
 
 const CAN_VIEW: Record<Resource, Perfil[]> = {
-  analises: ['ANALISTA', 'COMPRAS', 'COMPRA_MATERIA_PRIMA', 'GESTOR'],
+  analises: ['ANALISTA', 'COMPRAS', 'GESTOR'],
   fichas: ['ANALISTA', 'COMPRAS', 'GESTOR'],
   coletas: ['ANALISTA', 'COMPRAS', 'GESTOR'],
   lotes: ['ANALISTA', 'COMPRAS', 'GESTOR'],
@@ -32,7 +32,7 @@ const CAN_DELETE: Record<Resource, Perfil[]> = {
 }
 
 const CAN_EXPORT: Record<Resource, Perfil[]> = {
-  analises: ['ANALISTA', 'COMPRAS', 'COMPRA_MATERIA_PRIMA', 'GESTOR'],
+  analises: ['ANALISTA', 'COMPRAS', 'GESTOR'],
   fichas: ['ANALISTA', 'COMPRAS'],
   coletas: ['ANALISTA', 'COMPRAS'],
   lotes: ['ANALISTA', 'COMPRAS'],
