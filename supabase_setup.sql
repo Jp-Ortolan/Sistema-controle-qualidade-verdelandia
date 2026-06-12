@@ -106,7 +106,7 @@ ALTER TABLE "FichaEmbalagem"
 INSERT INTO "User" ("email", "senhaHash", "perfil") VALUES
     ('analista@scq.com', '$2a$10$IwhKYxts0TOwqEptmYummOySOZFUPg9h/mUJlVqyEs4yfrx7N1ogm', 'ANALISTA'),
     ('compras@scq.com',  '$2a$10$IwhKYxts0TOwqEptmYummOySOZFUPg9h/mUJlVqyEs4yfrx7N1ogm', 'COMPRAS'),
-    ('compra@scq.com',   '$2a$10$IwhKYxts0TOwqEptmYummOySOZFUPg9h/mUJlVqyEs4yfrx7N1ogm', 'COMPRA_MATERIA_PRIMA');
+    ('gestor@scq.com',   '$2a$10$IwhKYxts0TOwqEptmYummOySOZFUPg9h/mUJlVqyEs4yfrx7N1ogm', 'GESTOR');
 
 -- ----------------------------------------------------------------
 -- 9. SEED — Lotes

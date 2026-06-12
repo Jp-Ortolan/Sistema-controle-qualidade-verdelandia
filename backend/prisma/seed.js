@@ -9,7 +9,6 @@ async function main() {
   // Users
   await prisma.user.upsert({ where: { email: 'analista@scq.com' }, update: {}, create: { email: 'analista@scq.com', senhaHash: await hash('123456'), perfil: 'ANALISTA' } });
   await prisma.user.upsert({ where: { email: 'compras@scq.com' }, update: {}, create: { email: 'compras@scq.com', senhaHash: await hash('123456'), perfil: 'COMPRAS' } });
-  await prisma.user.upsert({ where: { email: 'compra@scq.com' }, update: {}, create: { email: 'compra@scq.com', senhaHash: await hash('123456'), perfil: 'COMPRA_MATERIA_PRIMA' } });
   await prisma.user.upsert({ where: { email: 'gestor@scq.com' }, update: {}, create: { email: 'gestor@scq.com', senhaHash: await hash('123456'), perfil: 'GESTOR' } });
 
   // Lotes
@@ -18,7 +17,7 @@ async function main() {
   await prisma.lote.upsert({ where: { codigo: 'L2026003' }, update: {}, create: { codigo: 'L2026003', produto: 'MENTA_LIMAO', dataFabricacao: new Date('2026-03-20') } });
 
   // Analises (ticket gerado automaticamente, mas seed define manualmente)
-  await prisma.analise.create({ data: { nomeProdutor: 'Sítio Boa Esperança', loteId: l1.id, ticket: 'TK-0001', percentualPalito: 8, teorPo: 12.5, umidade: 11.2, desconto: 5 } });
+  await prisma.analise.create({ data: { nomeProdutor: 'Sítio Boa Esperança', loteId: l1.id, ticket: 'TK-0001', percentualPalito: 8, teorPo: 12.5, umidade: 11.2, desconto: 2.695 } });
   await prisma.analise.create({ data: { nomeProdutor: 'Fazenda São José', loteId: l2.id, ticket: 'TK-0002', percentualPalito: 3, teorPo: 8.0, umidade: 9.5, desconto: 0 } });
 
   // Ficha (4 parâmetros fixos)
