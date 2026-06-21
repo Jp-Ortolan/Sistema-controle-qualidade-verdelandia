@@ -16,14 +16,15 @@ model User {
 }
 
 model Lote {
-  id             Int              @id @default(autoincrement())
-  codigo         String           @unique
-  produto        String
-  dataFabricacao DateTime
-  observacao     String?
-  createdAt      DateTime         @default(now())
-  analises       Analise[]
-  fichas         FichaEmbalagem[]
+  id         Int              @id @default(autoincrement())
+  codigo     String           @unique
+  produto    String           @default("Erva-Mate Cancheada")
+  dataInicio DateTime
+  dataFim    DateTime
+  observacao String?
+  createdAt  DateTime         @default(now())
+  analises   Analise[]
+  fichas     FichaEmbalagem[]
 }
 
 model Analise {

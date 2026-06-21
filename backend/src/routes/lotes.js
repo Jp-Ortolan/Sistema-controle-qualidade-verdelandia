@@ -10,8 +10,8 @@ router.use(auth);
 
 const loteSchema = z.object({
   codigo: z.string().min(1, 'Código obrigatório'),
-  produto: z.enum(['NATURAL', 'ABACAXI', 'MENTA_LIMAO', 'LIMAO'], { errorMap: () => ({ message: 'Produto inválido' }) }),
-  dataFabricacao: z.string().min(1, 'Data de fabricação obrigatória'),
+  dataInicio: z.string().min(1, 'Data de início obrigatória'),
+  dataFim: z.string().min(1, 'Data de fim obrigatória'),
   observacao: z.string().optional(),
 });
 
@@ -30,9 +30,15 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
     const existe = await prisma.lote.findUnique({ where: { codigo: data.codigo } });
     if (existe) return res.status(409).json({ error: 'Já existe um lote com esse código' });
     const lote = await prisma.lote.create({
-      data: { ...data, dataFabricacao: new Date(data.dataFabricacao) },
+      data: {
+        codigo: data.codigo,
+        produto: 'Erva-Mate Cancheada',
+        dataInicio: new Date(data.dataInicio),
+        dataFim: new Date(data.dataFim),
+        observacao: data.observacao,
+      },
     });
-    auditLog(req, 'CRIAR', 'LOTE', lote.id, { codigo: lote.codigo, produto: lote.produto });
+    auditLog(req, 'CRIAR', 'LOTE', lote.id, { codigo: lote.codigo });
     return res.status(201).json(lote);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
@@ -48,9 +54,15 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
     if (existeOutro) return res.status(409).json({ error: 'Já existe outro lote com esse código' });
     const lote = await prisma.lote.update({
       where: { id },
-      data: { ...data, dataFabricacao: new Date(data.dataFabricacao) },
+      data: {
+        codigo: data.codigo,
+        produto: 'Erva-Mate Cancheada',
+        dataInicio: new Date(data.dataInicio),
+        dataFim: new Date(data.dataFim),
+        observacao: data.observacao,
+      },
     });
-    auditLog(req, 'EDITAR', 'LOTE', lote.id, { codigo: lote.codigo, produto: lote.produto });
+    auditLog(req, 'EDITAR', 'LOTE', lote.id, { codigo: lote.codigo });
     return res.json(lote);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });

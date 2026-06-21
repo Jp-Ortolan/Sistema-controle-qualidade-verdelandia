@@ -12,16 +12,18 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClos
   )
 }
 
-const PRODUTO_LABEL: Record<string, string> = {
-  NATURAL: 'Erva Natural',
-  ABACAXI: 'Abacaxi',
-  MENTA_LIMAO: 'Menta & Limão',
-  LIMAO: 'Limão',
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr)
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
 }
 
-const TODAY = new Date().toISOString().split('T')[0]
+function formatPeriodo(inicio: string, fim: string): string {
+  const fmt = (s: string) => new Date(s).toLocaleDateString('pt-BR')
+  return `${fmt(inicio)} a ${fmt(fim)}`
+}
 
-const EMPTY_FORM = { codigo: '', produto: '', dataFabricacao: '', observacao: '' }
+const EMPTY_FORM = { codigo: '', dataInicio: '', dataFim: '', observacao: '' }
 
 type FormState = typeof EMPTY_FORM
 type FormErrors = Partial<Record<keyof FormState, string>>
@@ -64,8 +66,8 @@ export default function Lotes() {
     setEditingItem(l)
     setForm({
       codigo: l.codigo,
-      produto: l.produto,
-      dataFabricacao: l.dataFabricacao.split('T')[0],
+      dataInicio: l.dataInicio.split('T')[0],
+      dataFim: l.dataFim.split('T')[0],
       observacao: l.observacao ?? '',
     })
     setErrors({})
@@ -75,10 +77,18 @@ export default function Lotes() {
   function validate(): boolean {
     const errs: FormErrors = {}
     if (!form.codigo.trim()) errs.codigo = 'Código é obrigatório'
-    if (!form.produto) errs.produto = 'Produto é obrigatório'
-    if (!form.dataFabricacao) errs.dataFabricacao = 'Data de fabricação é obrigatória'
+    if (!form.dataInicio) errs.dataInicio = 'Data de início é obrigatória'
+    if (!form.dataFim) errs.dataFim = 'Data de fim é obrigatória'
     setErrors(errs)
     return Object.keys(errs).length === 0
+  }
+
+  function handleDataInicioChange(value: string) {
+    setForm((f) => ({
+      ...f,
+      dataInicio: value,
+      dataFim: value ? addDays(value, 7) : f.dataFim,
+    }))
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -87,8 +97,8 @@ export default function Lotes() {
     setSaving(true)
     const payload = {
       codigo: form.codigo.trim(),
-      produto: form.produto,
-      dataFabricacao: form.dataFabricacao,
+      dataInicio: form.dataInicio,
+      dataFim: form.dataFim,
       observacao: form.observacao.trim() || undefined,
     }
     try {
@@ -121,7 +131,7 @@ export default function Lotes() {
   }
 
   const inputCls = 'w-full rounded-xl border border-zinc-700 bg-zinc-800/60 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
-  const selectCls = 'w-full rounded-xl border border-zinc-700 bg-zinc-800/60 px-4 py-2.5 text-sm text-zinc-200 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
+  const disabledCls = 'w-full rounded-xl border border-zinc-700/50 bg-zinc-800/30 px-4 py-2.5 text-sm text-zinc-500 outline-none cursor-not-allowed'
 
   const showActions = canWrite || canDel
 
@@ -165,39 +175,42 @@ export default function Lotes() {
                 {errors.codigo && <p className="mt-1 text-xs text-red-400">{errors.codigo}</p>}
               </div>
 
-              {/* Produto */}
+              {/* Produto (fixo) */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">
-                  Produto<span className="ml-0.5 text-red-400">*</span>
-                </label>
-                <select
-                  value={form.produto}
-                  onChange={(e) => setForm((f) => ({ ...f, produto: e.target.value }))}
-                  className={selectCls}
-                >
-                  <option value="">Selecione...</option>
-                  <option value="NATURAL">Erva Natural</option>
-                  <option value="ABACAXI">Abacaxi</option>
-                  <option value="MENTA_LIMAO">Menta & Limão</option>
-                  <option value="LIMAO">Limão</option>
-                </select>
-                {errors.produto && <p className="mt-1 text-xs text-red-400">{errors.produto}</p>}
+                <label className="mb-1 block text-xs font-medium text-zinc-400">Produto</label>
+                <input
+                  value="Erva-Mate Cancheada"
+                  disabled
+                  className={disabledCls}
+                />
               </div>
 
-              {/* Data de Fabricação */}
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">
-                  Data de Fabricação<span className="ml-0.5 text-red-400">*</span>
-                </label>
-                <input
-                  type="date"
-                  placeholder="dd/mm/aaaa"
-                  max={TODAY}
-                  value={form.dataFabricacao}
-                  onChange={(e) => setForm((f) => ({ ...f, dataFabricacao: e.target.value }))}
-                  className={inputCls}
-                />
-                {errors.dataFabricacao && <p className="mt-1 text-xs text-red-400">{errors.dataFabricacao}</p>}
+              {/* Período */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-zinc-400">
+                    Data de Início<span className="ml-0.5 text-red-400">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={form.dataInicio}
+                    onChange={(e) => handleDataInicioChange(e.target.value)}
+                    className={inputCls}
+                  />
+                  {errors.dataInicio && <p className="mt-1 text-xs text-red-400">{errors.dataInicio}</p>}
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-zinc-400">
+                    Data de Fim<span className="ml-0.5 text-red-400">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={form.dataFim}
+                    onChange={(e) => setForm((f) => ({ ...f, dataFim: e.target.value }))}
+                    className={inputCls}
+                  />
+                  {errors.dataFim && <p className="mt-1 text-xs text-red-400">{errors.dataFim}</p>}
+                </div>
               </div>
 
               {/* Observação */}
@@ -240,7 +253,7 @@ export default function Lotes() {
           <table className="w-full min-w-[640px]">
             <thead>
               <tr>
-                {['#', 'Código', 'Produto', 'Data Fabricação', 'Observação', 'Cadastro', ...(showActions ? ['Ações'] : [])].map((h) => (
+                {['#', 'Código', 'Produto', 'Período', 'Observação', 'Cadastro', ...(showActions ? ['Ações'] : [])].map((h) => (
                   <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>
                 ))}
               </tr>
@@ -256,9 +269,9 @@ export default function Lotes() {
                 <tr key={l.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
                   <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">{l.id}</td>
                   <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">{l.codigo}</td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{PRODUTO_LABEL[l.produto] ?? l.produto}</td>
+                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{l.produto}</td>
                   <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">
-                    {new Date(l.dataFabricacao).toLocaleDateString('pt-BR')}
+                    {formatPeriodo(l.dataInicio, l.dataFim)}
                   </td>
                   <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-400">
                     {l.observacao ?? <span className="text-zinc-600">—</span>}

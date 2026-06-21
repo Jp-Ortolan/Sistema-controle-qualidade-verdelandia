@@ -3,8 +3,9 @@ const BASE = `${import.meta.env.VITE_API_URL ?? ''}/api`
 export interface Lote {
   id: number
   codigo: string
-  produto: 'NATURAL' | 'ABACAXI' | 'MENTA_LIMAO' | 'LIMAO'
-  dataFabricacao: string
+  produto: string
+  dataInicio: string
+  dataFim: string
   observacao?: string | null
   createdAt: string
 }
@@ -136,7 +137,7 @@ function buildParams(params: Record<string, string | undefined>): string {
   return s ? `?${s}` : ''
 }
 
-type LoteInput = { codigo: string; produto: string; dataFabricacao: string; observacao?: string }
+type LoteInput = { codigo: string; dataInicio: string; dataFim: string; observacao?: string }
 type AnaliseInput = {
   nomeProdutor?: string | null
   ticket: string
