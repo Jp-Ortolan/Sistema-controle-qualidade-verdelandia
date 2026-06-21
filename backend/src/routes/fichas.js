@@ -4,7 +4,7 @@ const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { requirePerfil } = require('../middleware/perfil');
 const { auditLog } = require('../lib/logger');
-const { buildDateRange, LOTE_INCLUDE } = require('../lib/utils');
+const { buildDateRange } = require('../lib/utils');
 
 const router = express.Router();
 router.use(auth);
@@ -19,14 +19,11 @@ const paramSchema = z.object({
 });
 
 const fichaSchema = z.object({
-  loteId: z.number().int().positive().optional().nullable(),
   fornecedor: z.string().min(1, 'Fornecedor obrigatório'),
   parametros: z.array(paramSchema).length(4, 'São necessários exatamente 4 parâmetros'),
   observacoes: z.string().optional().nullable(),
   statusGlobal: z.enum(['CONFORME', 'NAO_CONFORME']),
 });
-
-const INCLUDE = LOTE_INCLUDE;
 
 router.get('/', async (req, res) => {
   try {
@@ -38,7 +35,7 @@ router.get('/', async (req, res) => {
     const skip = (parseInt(pagina) - 1) * parseInt(limite);
     const take = parseInt(limite);
     const [fichas, total] = await Promise.all([
-      prisma.fichaEmbalagem.findMany({ where, include: INCLUDE, orderBy: { createdAt: 'desc' }, skip, take }),
+      prisma.fichaEmbalagem.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take }),
       prisma.fichaEmbalagem.count({ where }),
     ]);
     return res.json({ fichas, total, pagina: parseInt(pagina), limite: take });
@@ -50,13 +47,11 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
     const data = fichaSchema.parse(req.body);
     const ficha = await prisma.fichaEmbalagem.create({
       data: {
-        loteId: data.loteId ?? null,
         fornecedor: data.fornecedor,
         parametros: JSON.stringify(data.parametros),
         observacoes: data.observacoes ?? null,
         statusGlobal: data.statusGlobal,
       },
-      include: INCLUDE,
     });
     auditLog(req, 'CRIAR', 'FICHA', ficha.id, { fornecedor: ficha.fornecedor, status: ficha.statusGlobal });
     return res.status(201).json(ficha);
@@ -73,13 +68,11 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
     const ficha = await prisma.fichaEmbalagem.update({
       where: { id },
       data: {
-        loteId: data.loteId ?? null,
         fornecedor: data.fornecedor,
         parametros: JSON.stringify(data.parametros),
         observacoes: data.observacoes ?? null,
         statusGlobal: data.statusGlobal,
       },
-      include: INCLUDE,
     });
     auditLog(req, 'EDITAR', 'FICHA', ficha.id, { fornecedor: ficha.fornecedor, status: ficha.statusGlobal });
     return res.json(ficha);
@@ -106,7 +99,6 @@ router.get('/:id/pdf', async (req, res) => {
   try {
     const ficha = await prisma.fichaEmbalagem.findUnique({
       where: { id: parseInt(req.params.id) },
-      include: { lote: { select: { codigo: true, produto: true } } },
     });
     if (!ficha) return res.status(404).json({ error: 'Ficha não encontrada' });
 
@@ -160,7 +152,6 @@ router.get('/:id/pdf', async (req, res) => {
         {
           columns: [
             { text: [{ text: 'Fornecedor: ', bold: true }, ficha.fornecedor], fontSize: 10 },
-            { text: [{ text: 'Lote: ', bold: true }, ficha.lote?.codigo ?? '—'], fontSize: 10 },
             { text: `Emissão: ${emissao}`, fontSize: 9, color: '#6b7280', alignment: 'right' },
           ],
           margin: [0, 0, 0, 12],
@@ -189,7 +180,7 @@ router.get('/:id/pdf', async (req, res) => {
 
     pdfMake.createPdf(docDefinition).getBuffer((buffer) => {
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename=FORQSE001-${ficha.id}.pdf`);
+      res.setHeader('Content-Disposition', `attachment; filename=FORQSE001-${String(ficha.id).padStart(4, '0')}.pdf`);
       res.end(buffer);
     });
   } catch (err) {

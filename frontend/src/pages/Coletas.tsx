@@ -20,7 +20,6 @@ const TODAY = new Date().toISOString().split('T')[0]
 
 const EMPTY_FORM = {
   dataColeta: TODAY,
-  tipoProduto: '',
   destino: '',
 }
 
@@ -28,7 +27,7 @@ type FormState = typeof EMPTY_FORM
 type FormErrors = Partial<Record<keyof FormState, string>>
 
 const inputCls = 'w-full rounded-xl border border-zinc-700 bg-zinc-800/60 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
-const selectCls = 'w-full rounded-xl border border-zinc-700 bg-zinc-800/60 px-4 py-2.5 text-sm text-zinc-200 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
+const disabledCls = 'w-full rounded-xl border border-zinc-700/50 bg-zinc-800/30 px-4 py-2.5 text-sm text-zinc-500 outline-none cursor-not-allowed'
 
 export default function Coletas() {
   const perfil = getPerfil()
@@ -44,7 +43,7 @@ export default function Coletas() {
   const [exporting, setExporting] = useState(false)
   const [confirmId, setConfirmId] = useState<number | null>(null)
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
-  const [filters, setFilters] = useState({ tipoProduto: '', destino: '', dataInicio: '', dataFim: '' })
+  const [filters, setFilters] = useState({ destino: '', dataInicio: '', dataFim: '' })
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<FormErrors>({})
 
@@ -52,7 +51,6 @@ export default function Coletas() {
     setLoading(true)
     try {
       const c = await api.coletas.list({
-        tipoProduto: filters.tipoProduto || undefined,
         destino: filters.destino || undefined,
         dataInicio: filters.dataInicio || undefined,
         dataFim: filters.dataFim || undefined,
@@ -78,7 +76,6 @@ export default function Coletas() {
     setEditingItem(c)
     setForm({
       dataColeta: c.dataColeta.split('T')[0],
-      tipoProduto: c.tipoProduto,
       destino: c.destino,
     })
     setErrors({})
@@ -88,7 +85,6 @@ export default function Coletas() {
   function validate(): boolean {
     const errs: FormErrors = {}
     if (!form.dataColeta) errs.dataColeta = 'Data da coleta é obrigatória'
-    if (!form.tipoProduto) errs.tipoProduto = 'Tipo de produto é obrigatório'
     if (!form.destino.trim()) errs.destino = 'Destino é obrigatório'
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -100,7 +96,6 @@ export default function Coletas() {
     setSaving(true)
     const payload = {
       dataColeta: form.dataColeta,
-      tipoProduto: form.tipoProduto,
       destino: form.destino.trim(),
     }
     try {
@@ -197,27 +192,19 @@ export default function Coletas() {
       {/* Filtros */}
       <div className="mb-5 flex flex-wrap gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
         <input
-          value={filters.tipoProduto}
-          onChange={(e) => setFilters((f) => ({ ...f, tipoProduto: e.target.value }))}
-          placeholder="Tipo de produto"
-          className="min-w-[140px] flex-1 rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-emerald-500"
-        />
-        <input
           value={filters.destino}
           onChange={(e) => setFilters((f) => ({ ...f, destino: e.target.value }))}
           placeholder="Destino"
-          className="min-w-[120px] flex-1 rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-emerald-500"
+          className="min-w-[140px] flex-1 rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-emerald-500"
         />
         <input
           type="date"
-          placeholder="dd/mm/aaaa"
           value={filters.dataInicio}
           onChange={(e) => setFilters((f) => ({ ...f, dataInicio: e.target.value }))}
           className="flex-1 min-w-[120px] rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
         />
         <input
           type="date"
-          placeholder="dd/mm/aaaa"
           value={filters.dataFim}
           onChange={(e) => setFilters((f) => ({ ...f, dataFim: e.target.value }))}
           className="flex-1 min-w-[120px] rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
@@ -247,7 +234,6 @@ export default function Coletas() {
                 </label>
                 <input
                   type="date"
-                  placeholder="dd/mm/aaaa"
                   max={TODAY}
                   value={form.dataColeta}
                   onChange={(e) => setForm((f) => ({ ...f, dataColeta: e.target.value }))}
@@ -256,23 +242,14 @@ export default function Coletas() {
                 {errors.dataColeta && <p className="mt-1 text-xs text-red-400">{errors.dataColeta}</p>}
               </div>
 
-              {/* Tipo de Produto */}
+              {/* Tipo de Produto (fixo) */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">
-                  Tipo de Produto<span className="ml-0.5 text-red-400">*</span>
-                </label>
-                <select
-                  value={form.tipoProduto}
-                  onChange={(e) => setForm((f) => ({ ...f, tipoProduto: e.target.value }))}
-                  className={selectCls}
-                >
-                  <option value="">Selecione...</option>
-                  <option value="Natural">Natural</option>
-                  <option value="Abacaxi">Abacaxi</option>
-                  <option value="Menta & Limão">Menta & Limão</option>
-                  <option value="Limão">Limão</option>
-                </select>
-                {errors.tipoProduto && <p className="mt-1 text-xs text-red-400">{errors.tipoProduto}</p>}
+                <label className="mb-1 block text-xs font-medium text-zinc-400">Tipo de Produto</label>
+                <input
+                  value="Erva-Mate Cancheada"
+                  disabled
+                  className={disabledCls}
+                />
               </div>
 
               {/* Destino */}

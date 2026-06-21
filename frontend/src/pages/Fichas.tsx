@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { Plus, X, Loader2, Search, FileDown, Pencil, Trash2 } from 'lucide-react'
-import { api, type FichaEmbalagem, type Parametro, type Lote } from '../services/api'
+import { api, type FichaEmbalagem, type Parametro } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 
 function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClose: () => void }) {
@@ -21,15 +21,7 @@ const EMPTY_PARAMS: Parametro[] = [
   { resultado: '', unidade: '', padrao: '', unidadePadrao: '', conforme: true },
 ]
 
-const PRODUTO_LABEL: Record<string, string> = {
-  NATURAL: 'Erva Natural',
-  ABACAXI: 'Abacaxi',
-  MENTA_LIMAO: 'Menta & Limão',
-  LIMAO: 'Limão',
-}
-
 const inputCls = 'w-full rounded-xl border border-zinc-700 bg-zinc-800/60 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
-const selectCls = 'w-full rounded-xl border border-zinc-700 bg-zinc-800/60 px-4 py-2.5 text-sm text-zinc-200 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
 
 export default function Fichas() {
   const perfil = getPerfil()
@@ -38,7 +30,6 @@ export default function Fichas() {
   const canExport = can.export('fichas', perfil)
 
   const [data, setData] = useState<{ fichas: FichaEmbalagem[]; total: number }>({ fichas: [], total: 0 })
-  const [lotes, setLotes] = useState<Lote[]>([])
   const [loading, setLoading] = useState(true)
   const [editingItem, setEditingItem] = useState<FichaEmbalagem | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -49,7 +40,6 @@ export default function Fichas() {
   const [filters, setFilters] = useState({ status: '', dataInicio: '', dataFim: '' })
   const [pagina, setPagina] = useState(1)
   const [fornecedor, setFornecedor] = useState('')
-  const [loteId, setLoteId] = useState('')
   const [parametros, setParametros] = useState<Parametro[]>(EMPTY_PARAMS.map((p) => ({ ...p })))
   const [observacoes, setObservacoes] = useState('')
   const [fornecedorError, setFornecedorError] = useState('')
@@ -58,18 +48,14 @@ export default function Fichas() {
   async function load(pg = pagina) {
     setLoading(true)
     try {
-      const [res, ls] = await Promise.all([
-        api.fichas.list({
-          status: filters.status || undefined,
-          dataInicio: filters.dataInicio || undefined,
-          dataFim: filters.dataFim || undefined,
-          pagina: String(pg),
-          limite: String(limite),
-        }),
-        api.lotes.list(),
-      ])
+      const res = await api.fichas.list({
+        status: filters.status || undefined,
+        dataInicio: filters.dataInicio || undefined,
+        dataFim: filters.dataFim || undefined,
+        pagina: String(pg),
+        limite: String(limite),
+      })
       setData(res)
-      setLotes(ls)
     } catch {
       setToast({ msg: 'Erro ao carregar fichas', type: 'err' })
     } finally {
@@ -81,7 +67,6 @@ export default function Fichas() {
 
   function resetForm() {
     setFornecedor('')
-    setLoteId('')
     setParametros(EMPTY_PARAMS.map((p) => ({ ...p })))
     setObservacoes('')
     setFornecedorError('')
@@ -96,9 +81,7 @@ export default function Fichas() {
   function openEdit(f: FichaEmbalagem) {
     setEditingItem(f)
     setFornecedor(f.fornecedor)
-    setLoteId(f.loteId ? String(f.loteId) : '')
     const parsed = JSON.parse(f.parametros) as Parametro[]
-    // Ensure exactly 4 rows, padding with empty if needed
     const padded: Parametro[] = Array.from({ length: 4 }, (_, i) =>
       parsed[i] ?? { resultado: '', unidade: '', padrao: '', unidadePadrao: '', conforme: true }
     )
@@ -120,7 +103,6 @@ export default function Fichas() {
     setFornecedorError('')
     setSaving(true)
     const payload = {
-      loteId: loteId ? parseInt(loteId) : null,
       fornecedor: fornecedor.trim(),
       parametros,
       observacoes: observacoes.trim() || null,
@@ -155,7 +137,7 @@ export default function Fichas() {
     }
   }
 
-  async function handleDownloadPdf(id: number, codigo: string) {
+  async function handleDownloadPdf(id: number) {
     setDownloadingId(id)
     try {
       const res = await api.fichas.downloadPdf(id)
@@ -164,7 +146,7 @@ export default function Fichas() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `ficha-${codigo}.pdf`
+      a.download = `FORQSE001-${String(id).padStart(4, '0')}.pdf`
       a.click()
       URL.revokeObjectURL(url)
     } catch {
@@ -206,14 +188,12 @@ export default function Fichas() {
         </select>
         <input
           type="date"
-          placeholder="dd/mm/aaaa"
           value={filters.dataInicio}
           onChange={(e) => setFilters((f) => ({ ...f, dataInicio: e.target.value }))}
           className="flex-1 min-w-[120px] rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
         />
         <input
           type="date"
-          placeholder="dd/mm/aaaa"
           value={filters.dataFim}
           onChange={(e) => setFilters((f) => ({ ...f, dataFim: e.target.value }))}
           className="flex-1 min-w-[120px] rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
@@ -242,29 +222,18 @@ export default function Fichas() {
 
             <div className="flex-1 overflow-y-auto px-3 py-4 min-[480px]:px-6 min-[480px]:py-5">
               <form id="ficha-form" onSubmit={handleSubmit} className="space-y-5">
-                {/* Fornecedor + Lote */}
-                <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-400">
-                      Fornecedor<span className="ml-0.5 text-red-400">*</span>
-                    </label>
-                    <input
-                      value={fornecedor}
-                      onChange={(e) => setFornecedor(e.target.value)}
-                      placeholder="Nome do fornecedor"
-                      className={inputCls}
-                    />
-                    {fornecedorError && <p className="mt-1 text-xs text-red-400">{fornecedorError}</p>}
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-400">Lote</label>
-                    <select value={loteId} onChange={(e) => setLoteId(e.target.value)} className={selectCls}>
-                      <option value="">Nenhum</option>
-                      {lotes.map((l) => (
-                        <option key={l.id} value={l.id}>{l.codigo} — {PRODUTO_LABEL[l.produto] ?? l.produto}</option>
-                      ))}
-                    </select>
-                  </div>
+                {/* Fornecedor */}
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-zinc-400">
+                    Fornecedor<span className="ml-0.5 text-red-400">*</span>
+                  </label>
+                  <input
+                    value={fornecedor}
+                    onChange={(e) => setFornecedor(e.target.value)}
+                    placeholder="Nome do fornecedor"
+                    className={inputCls}
+                  />
+                  {fornecedorError && <p className="mt-1 text-xs text-red-400">{fornecedorError}</p>}
                 </div>
 
                 {/* Parameters table */}
@@ -391,11 +360,11 @@ export default function Fichas() {
       ) : (
         <>
           <div className="overflow-x-auto rounded-xl border border-zinc-700/60 shadow-lg">
-            <table className="w-full min-w-[680px]">
+            <table className="w-full min-w-[560px]">
               <thead>
                 <tr>
                   {[
-                    '#', 'Lote', 'Fornecedor', 'Status', 'Data',
+                    '#', 'Fornecedor', 'Status', 'Data',
                     ...(canExport ? ['PDF'] : []),
                     ...(showActions ? ['Ações'] : []),
                   ].map((h) => (
@@ -413,9 +382,6 @@ export default function Fichas() {
                 ) : data.fichas.map((f) => (
                   <tr key={f.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
                     <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">{f.id}</td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">
-                      {f.lote ? f.lote.codigo : <span className="text-zinc-600">—</span>}
-                    </td>
                     <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{f.fornecedor}</td>
                     <td className="border-t border-zinc-800 px-4 py-2.5 text-center">
                       <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${f.statusGlobal === 'CONFORME' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
@@ -428,7 +394,7 @@ export default function Fichas() {
                     {canExport && (
                       <td className="border-t border-zinc-800 px-4 py-2.5 text-center">
                         <button
-                          onClick={() => handleDownloadPdf(f.id, f.lote?.codigo ?? String(f.id))}
+                          onClick={() => handleDownloadPdf(f.id)}
                           disabled={downloadingId === f.id}
                           className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700/20 px-3 py-1.5 text-xs font-medium text-emerald-400 transition hover:bg-emerald-700/30 disabled:opacity-50"
                         >

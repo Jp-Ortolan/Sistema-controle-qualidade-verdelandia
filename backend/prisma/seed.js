@@ -23,7 +23,6 @@ async function main() {
   // Ficha (4 parâmetros fixos)
   await prisma.fichaEmbalagem.create({
     data: {
-      loteId: l1.id,
       fornecedor: 'Ervateira Central Ltda',
       parametros: JSON.stringify([
         { resultado: '0.85', unidade: 'g/cm3', padrao: '0.80-0.90', unidadePadrao: 'g/cm3', conforme: true },
@@ -36,8 +35,8 @@ async function main() {
   });
 
   // Coletas
-  await prisma.coletaAmostra.create({ data: { tipoProduto: 'Natural', destino: 'Laboratório Interno', dataColeta: new Date('2026-05-10') } });
-  await prisma.coletaAmostra.create({ data: { tipoProduto: 'Menta & Limão', destino: 'TECPAR', dataColeta: new Date('2026-05-15') } });
+  await prisma.coletaAmostra.create({ data: { tipoProduto: 'Erva-Mate Cancheada', destino: 'Laboratório Interno', dataColeta: new Date('2026-05-10') } });
+  await prisma.coletaAmostra.create({ data: { tipoProduto: 'Erva-Mate Cancheada', destino: 'TECPAR', dataColeta: new Date('2026-05-15') } });
 
   console.log('✅ Seed v3 concluído com sucesso!');
 }

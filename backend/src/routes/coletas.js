@@ -13,7 +13,6 @@ router.use(requirePerfil('ANALISTA', 'COMPRAS'));
 
 const coletaSchema = z.object({
   dataColeta: z.string().min(1, 'Data obrigatória'),
-  tipoProduto: z.string().min(1, 'Tipo de produto obrigatório'),
   destino: z.string().min(1, 'Destino obrigatório'),
 });
 
@@ -55,9 +54,9 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
   try {
     const data = coletaSchema.parse(req.body);
     const coleta = await prisma.coletaAmostra.create({
-      data: { tipoProduto: data.tipoProduto, destino: data.destino, dataColeta: new Date(data.dataColeta) },
+      data: { tipoProduto: 'Erva-Mate Cancheada', destino: data.destino, dataColeta: new Date(data.dataColeta) },
     });
-    auditLog(req, 'CRIAR', 'COLETA', coleta.id, { tipoProduto: coleta.tipoProduto, destino: coleta.destino });
+    auditLog(req, 'CRIAR', 'COLETA', coleta.id, { destino: coleta.destino });
     return res.status(201).json(coleta);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });
@@ -71,9 +70,9 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
     const data = coletaSchema.parse(req.body);
     const coleta = await prisma.coletaAmostra.update({
       where: { id },
-      data: { tipoProduto: data.tipoProduto, destino: data.destino, dataColeta: new Date(data.dataColeta) },
+      data: { tipoProduto: 'Erva-Mate Cancheada', destino: data.destino, dataColeta: new Date(data.dataColeta) },
     });
-    auditLog(req, 'EDITAR', 'COLETA', coleta.id, { tipoProduto: coleta.tipoProduto, destino: coleta.destino });
+    auditLog(req, 'EDITAR', 'COLETA', coleta.id, { destino: coleta.destino });
     return res.json(coleta);
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ error: err.errors[0].message });

@@ -36,8 +36,6 @@ export interface Parametro {
 
 export interface FichaEmbalagem {
   id: number
-  loteId?: number | null
-  lote?: { codigo: string; produto: string } | null
   fornecedor: string
   parametros: string
   observacoes?: string | null
@@ -149,8 +147,8 @@ type AnaliseInput = {
   umidade?: number | null
   observacao?: string | null
 }
-type FichaInput = { loteId?: number | null; fornecedor: string; parametros: Parametro[]; observacoes?: string | null; statusGlobal: string }
-type ColetaInput = { dataColeta: string; tipoProduto: string; destino: string }
+type FichaInput = { fornecedor: string; parametros: Parametro[]; observacoes?: string | null; statusGlobal: string }
+type ColetaInput = { dataColeta: string; destino: string }
 
 export const api = {
   auth: {

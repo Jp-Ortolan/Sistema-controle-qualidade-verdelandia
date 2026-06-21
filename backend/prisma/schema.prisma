@@ -16,15 +16,14 @@ model User {
 }
 
 model Lote {
-  id         Int              @id @default(autoincrement())
-  codigo     String           @unique
-  produto    String           @default("Erva-Mate Cancheada")
+  id         Int       @id @default(autoincrement())
+  codigo     String    @unique
+  produto    String    @default("Erva-Mate Cancheada")
   dataInicio DateTime
   dataFim    DateTime
   observacao String?
-  createdAt  DateTime         @default(now())
+  createdAt  DateTime  @default(now())
   analises   Analise[]
-  fichas     FichaEmbalagem[]
 }
 
 model Analise {
@@ -45,8 +44,6 @@ model Analise {
 
 model FichaEmbalagem {
   id           Int      @id @default(autoincrement())
-  loteId       Int?
-  lote         Lote?    @relation(fields: [loteId], references: [id])
   fornecedor   String
   parametros   String
   observacoes  String?
@@ -56,7 +53,7 @@ model FichaEmbalagem {
 
 model ColetaAmostra {
   id          Int      @id @default(autoincrement())
-  tipoProduto String
+  tipoProduto String   @default("Erva-Mate Cancheada")
   destino     String
   dataColeta  DateTime
   createdAt   DateTime @default(now())
