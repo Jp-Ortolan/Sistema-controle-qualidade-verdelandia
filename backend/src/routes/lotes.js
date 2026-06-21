@@ -33,8 +33,8 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
       data: {
         codigo: data.codigo,
         produto: 'Erva-Mate Cancheada',
-        dataInicio: new Date(data.dataInicio),
-        dataFim: new Date(data.dataFim),
+        dataInicio: new Date(data.dataInicio + 'T12:00:00.000Z'),
+        dataFim: new Date(data.dataFim + 'T12:00:00.000Z'),
         observacao: data.observacao,
       },
     });
@@ -57,8 +57,8 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
       data: {
         codigo: data.codigo,
         produto: 'Erva-Mate Cancheada',
-        dataInicio: new Date(data.dataInicio),
-        dataFim: new Date(data.dataFim),
+        dataInicio: new Date(data.dataInicio + 'T12:00:00.000Z'),
+        dataFim: new Date(data.dataFim + 'T12:00:00.000Z'),
         observacao: data.observacao,
       },
     });

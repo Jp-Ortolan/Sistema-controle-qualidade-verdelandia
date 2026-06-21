@@ -12,8 +12,9 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClos
   )
 }
 
-function formatDate(s: string): string {
-  return new Date(s).toLocaleDateString('pt-BR')
+function formatDate(iso: string): string {
+  const [y, m, d] = iso.split('T')[0].split('-')
+  return `${d}/${m}/${y}`
 }
 
 const TODAY = new Date().toISOString().split('T')[0]

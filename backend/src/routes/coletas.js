@@ -54,7 +54,7 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
   try {
     const data = coletaSchema.parse(req.body);
     const coleta = await prisma.coletaAmostra.create({
-      data: { tipoProduto: 'Erva-Mate Cancheada', destino: data.destino, dataColeta: new Date(data.dataColeta) },
+      data: { tipoProduto: 'Erva-Mate Cancheada', destino: data.destino, dataColeta: new Date(data.dataColeta + 'T12:00:00.000Z') },
     });
     auditLog(req, 'CRIAR', 'COLETA', coleta.id, { destino: coleta.destino });
     return res.status(201).json(coleta);
@@ -70,7 +70,7 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
     const data = coletaSchema.parse(req.body);
     const coleta = await prisma.coletaAmostra.update({
       where: { id },
-      data: { tipoProduto: 'Erva-Mate Cancheada', destino: data.destino, dataColeta: new Date(data.dataColeta) },
+      data: { tipoProduto: 'Erva-Mate Cancheada', destino: data.destino, dataColeta: new Date(data.dataColeta + 'T12:00:00.000Z') },
     });
     auditLog(req, 'EDITAR', 'COLETA', coleta.id, { destino: coleta.destino });
     return res.json(coleta);

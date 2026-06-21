@@ -13,14 +13,18 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClos
 }
 
 function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr)
-  d.setDate(d.getDate() + days)
+  const d = new Date(dateStr + 'T12:00:00.000Z')
+  d.setUTCDate(d.getUTCDate() + days)
   return d.toISOString().split('T')[0]
 }
 
+function fmtDate(iso: string): string {
+  const [y, m, d] = iso.split('T')[0].split('-')
+  return `${d}/${m}/${y}`
+}
+
 function formatPeriodo(inicio: string, fim: string): string {
-  const fmt = (s: string) => new Date(s).toLocaleDateString('pt-BR')
-  return `${fmt(inicio)} a ${fmt(fim)}`
+  return `${fmtDate(inicio)} a ${fmtDate(fim)}`
 }
 
 const EMPTY_FORM = { codigo: '', dataInicio: '', dataFim: '', observacao: '' }
