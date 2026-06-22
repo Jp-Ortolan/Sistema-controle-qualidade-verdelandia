@@ -83,6 +83,7 @@ export default function Fichas() {
       parsed[i] ?? { resultado: '', unidade: '', padrao: '', unidadePadrao: '', conforme: true }
     )
     padded[2] = { ...padded[2], unidade: '', unidadePadrao: '' }
+    padded[3] = { ...padded[3], unidade: '', unidadePadrao: '' }
     setParametros(padded)
     setObservacoes(f.observacoes ?? '')
     setFornecedorError('')
@@ -273,11 +274,11 @@ export default function Fichas() {
                             </td>
                             <td className="px-2 py-1.5">
                               <input
-                                value={i === 2 ? '' : parametros[i].unidade}
+                                value={i === 2 || i === 3 ? '' : parametros[i].unidade}
                                 onChange={(e) => updateParam(i, 'unidade', e.target.value)}
                                 placeholder="UN"
-                                disabled={i === 2}
-                                className={`w-full rounded-lg border px-2 py-1.5 text-xs outline-none text-center ${i === 2 ? 'border-zinc-700/40 bg-zinc-800/20 text-zinc-600 cursor-not-allowed' : 'border-zinc-700 bg-zinc-800/60 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500'}`}
+                                disabled={i === 2 || i === 3}
+                                className={`w-full rounded-lg border px-2 py-1.5 text-xs outline-none text-center ${i === 2 || i === 3 ? 'border-zinc-700/40 bg-zinc-800/20 text-zinc-600 cursor-not-allowed' : 'border-zinc-700 bg-zinc-800/60 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500'}`}
                               />
                             </td>
                             <td className="px-2 py-1.5">
@@ -290,11 +291,11 @@ export default function Fichas() {
                             </td>
                             <td className="px-2 py-1.5">
                               <input
-                                value={i === 2 ? '' : parametros[i].unidadePadrao}
+                                value={i === 2 || i === 3 ? '' : parametros[i].unidadePadrao}
                                 onChange={(e) => updateParam(i, 'unidadePadrao', e.target.value)}
                                 placeholder="UN"
-                                disabled={i === 2}
-                                className={`w-full rounded-lg border px-2 py-1.5 text-xs outline-none text-center ${i === 2 ? 'border-zinc-700/40 bg-zinc-800/20 text-zinc-600 cursor-not-allowed' : 'border-zinc-700 bg-zinc-800/60 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500'}`}
+                                disabled={i === 2 || i === 3}
+                                className={`w-full rounded-lg border px-2 py-1.5 text-xs outline-none text-center ${i === 2 || i === 3 ? 'border-zinc-700/40 bg-zinc-800/20 text-zinc-600 cursor-not-allowed' : 'border-zinc-700 bg-zinc-800/60 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500'}`}
                               />
                             </td>
                             <td className="px-2 py-1.5">
