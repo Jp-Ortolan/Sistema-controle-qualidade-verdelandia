@@ -19,9 +19,11 @@ const paramSchema = z.object({
 });
 
 const fichaSchema = z.object({
-  fornecedor: z.string().min(1, 'Fornecedor obrigatório'),
+  fornecedor: z.string()
+    .min(3, 'Fornecedor deve ter pelo menos 3 caracteres')
+    .max(100, 'Fornecedor deve ter no máximo 100 caracteres'),
   parametros: z.array(paramSchema).length(4, 'São necessários exatamente 4 parâmetros'),
-  observacoes: z.string().optional().nullable(),
+  observacoes: z.string().max(500, 'Observação deve ter no máximo 500 caracteres').optional().nullable(),
   statusGlobal: z.enum(['CONFORME', 'NAO_CONFORME']),
 });
 

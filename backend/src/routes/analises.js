@@ -10,15 +10,22 @@ const router = express.Router();
 router.use(auth);
 
 const analiseSchema = z.object({
-  nomeProdutor: z.string().optional().nullable(),
-  ticket: z.string().min(1, 'Ticket obrigatório'),
+  nomeProdutor: z.string()
+    .min(2, 'Produtor deve ter pelo menos 2 caracteres')
+    .max(100, 'Produtor deve ter no máximo 100 caracteres')
+    .regex(/^[a-zA-ZÀ-ú\s]+$/, 'Produtor deve conter apenas letras e espaços')
+    .optional().nullable(),
+  ticket: z.string()
+    .min(1, 'Ticket obrigatório')
+    .max(20, 'Ticket deve ter no máximo 20 dígitos')
+    .regex(/^\d+$/, 'Ticket deve conter apenas números'),
   loteId: z.number().int().positive().optional().nullable(),
   dataAnalise: z.string().optional().nullable(),
   dataFabricacao: z.string().optional().nullable(),
   percentualPalito: z.number().min(0, 'Mínimo 0%').max(100, 'Máximo 100%'),
   teorPo: z.number().min(0).max(100).optional().nullable(),
   umidade: z.number().min(0).max(100).optional().nullable(),
-  observacao: z.string().optional().nullable(),
+  observacao: z.string().max(500, 'Observação deve ter no máximo 500 caracteres').optional().nullable(),
 });
 
 function calcularDesconto(pct) {

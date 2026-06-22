@@ -86,9 +86,14 @@ export default function Lotes() {
 
   function validate(): boolean {
     const errs: FormErrors = {}
-    if (!form.codigo.trim()) errs.codigo = 'Código é obrigatório'
+    const cod = form.codigo.trim()
+    if (!cod) errs.codigo = 'Código é obrigatório'
+    else if (cod.length < 2) errs.codigo = 'Código deve ter pelo menos 2 caracteres'
+    else if (cod.length > 20) errs.codigo = 'Código deve ter no máximo 20 caracteres'
+    else if (!/^[a-zA-Z0-9]+$/.test(cod)) errs.codigo = 'Código deve conter apenas letras e números'
     if (!form.dataInicio) errs.dataInicio = 'Data de início é obrigatória'
     if (!form.dataFim) errs.dataFim = 'Data de fim é obrigatória'
+    if (form.observacao.length > 500) errs.observacao = 'Observação deve ter no máximo 500 caracteres'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -233,6 +238,7 @@ export default function Lotes() {
                   placeholder="Observações opcionais..."
                   className={inputCls}
                 />
+                {errors.observacao && <p className="mt-1 text-xs text-red-400">{errors.observacao}</p>}
               </div>
 
               <div className="flex flex-col-reverse gap-3 pt-2 min-[380px]:flex-row">

@@ -121,9 +121,31 @@ export default function Analises() {
 
   function validate(): boolean {
     const errs: FormErrors = {}
-    if (!form.ticket.trim()) errs.ticket = 'Ticket é obrigatório'
+    const tkt = form.ticket.trim()
+    if (!tkt) errs.ticket = 'Ticket é obrigatório'
+    else if (!/^\d+$/.test(tkt)) errs.ticket = 'Ticket deve conter apenas números'
+    else if (tkt.length > 20) errs.ticket = 'Ticket deve ter no máximo 20 dígitos'
+    const prod = form.nomeProdutor.trim()
+    if (prod) {
+      if (prod.length < 2) errs.nomeProdutor = 'Produtor deve ter pelo menos 2 caracteres'
+      else if (prod.length > 100) errs.nomeProdutor = 'Produtor deve ter no máximo 100 caracteres'
+      else if (!/^[a-zA-ZÀ-ú\s]+$/.test(prod)) errs.nomeProdutor = 'Produtor deve conter apenas letras e espaços'
+    }
     if (!form.dataAnalise) errs.dataAnalise = 'Data da análise é obrigatória'
     if (!form.percentualPalito) errs.percentualPalito = 'Teor de palito é obrigatório'
+    else {
+      const pct = parseFloat(form.percentualPalito)
+      if (isNaN(pct) || pct < 0 || pct > 100) errs.percentualPalito = 'Valor deve estar entre 0 e 100'
+    }
+    if (form.teorPo !== '') {
+      const tp = parseFloat(form.teorPo)
+      if (isNaN(tp) || tp < 0 || tp > 100) errs.teorPo = 'Valor deve estar entre 0 e 100'
+    }
+    if (form.umidade !== '') {
+      const um = parseFloat(form.umidade)
+      if (isNaN(um) || um < 0 || um > 100) errs.umidade = 'Valor deve estar entre 0 e 100'
+    }
+    if (form.observacao.length > 500) errs.observacao = 'Observação deve ter no máximo 500 caracteres'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -320,9 +342,10 @@ export default function Analises() {
                   <input
                     value={form.nomeProdutor}
                     onChange={(e) => setForm((f) => ({ ...f, nomeProdutor: e.target.value }))}
-                    placeholder="Ex: Sítio Boa Esperança"
+                    placeholder="Ex: João Silva"
                     className={inputCls}
                   />
+                  {errors.nomeProdutor && <p className="mt-1 text-xs text-red-400">{errors.nomeProdutor}</p>}
                 </div>
 
                 {/* Lote */}
@@ -407,6 +430,7 @@ export default function Analises() {
                       placeholder="Opcional"
                       className={inputCls}
                     />
+                    {errors.teorPo && <p className="mt-1 text-xs text-red-400">{errors.teorPo}</p>}
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-zinc-400">Umidade %</label>
@@ -420,6 +444,7 @@ export default function Analises() {
                       placeholder="Opcional"
                       className={inputCls}
                     />
+                    {errors.umidade && <p className="mt-1 text-xs text-red-400">{errors.umidade}</p>}
                   </div>
                 </div>
 
@@ -433,6 +458,7 @@ export default function Analises() {
                     placeholder="Observações opcionais..."
                     className={inputCls}
                   />
+                  {errors.observacao && <p className="mt-1 text-xs text-red-400">{errors.observacao}</p>}
                 </div>
               </form>
             </div>

@@ -9,10 +9,13 @@ const router = express.Router();
 router.use(auth);
 
 const loteSchema = z.object({
-  codigo: z.string().min(1, 'Código obrigatório'),
+  codigo: z.string()
+    .min(2, 'Código deve ter pelo menos 2 caracteres')
+    .max(20, 'Código deve ter no máximo 20 caracteres')
+    .regex(/^[a-zA-Z0-9]+$/, 'Código deve conter apenas letras e números'),
   dataInicio: z.string().min(1, 'Data de início obrigatória'),
   dataFim: z.string().min(1, 'Data de fim obrigatória'),
-  observacao: z.string().optional(),
+  observacao: z.string().max(500, 'Observação deve ter no máximo 500 caracteres').optional(),
 });
 
 router.get('/', async (req, res) => {

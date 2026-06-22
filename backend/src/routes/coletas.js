@@ -13,7 +13,9 @@ router.use(requirePerfil('ANALISTA', 'COMPRAS'));
 
 const coletaSchema = z.object({
   dataColeta: z.string().min(1, 'Data obrigatória'),
-  destino: z.string().min(1, 'Destino obrigatório'),
+  destino: z.string()
+    .min(3, 'Destino deve ter pelo menos 3 caracteres')
+    .max(100, 'Destino deve ter no máximo 100 caracteres'),
 });
 
 router.get('/exportar', async (_req, res) => {

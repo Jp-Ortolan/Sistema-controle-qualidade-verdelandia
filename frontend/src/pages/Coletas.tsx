@@ -92,7 +92,10 @@ export default function Coletas() {
   function validate(): boolean {
     const errs: FormErrors = {}
     if (!form.dataColeta) errs.dataColeta = 'Data da coleta é obrigatória'
-    if (!form.destino.trim()) errs.destino = 'Destino é obrigatório'
+    const dest = form.destino.trim()
+    if (!dest) errs.destino = 'Destino é obrigatório'
+    else if (dest.length < 3) errs.destino = 'Destino deve ter pelo menos 3 caracteres'
+    else if (dest.length > 100) errs.destino = 'Destino deve ter no máximo 100 caracteres'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }

@@ -38,6 +38,7 @@ export default function Fichas() {
   const [parametros, setParametros] = useState<Parametro[]>(EMPTY_PARAMS.map((p) => ({ ...p })))
   const [observacoes, setObservacoes] = useState('')
   const [fornecedorError, setFornecedorError] = useState('')
+  const [observacoesError, setObservacoesError] = useState('')
   const limite = 10
 
   async function load(pg = pagina) {
@@ -65,6 +66,7 @@ export default function Fichas() {
     setParametros(EMPTY_PARAMS.map((p) => ({ ...p })))
     setObservacoes('')
     setFornecedorError('')
+    setObservacoesError('')
   }
 
   function openCreate() {
@@ -80,9 +82,11 @@ export default function Fichas() {
     const padded: Parametro[] = Array.from({ length: 4 }, (_, i) =>
       parsed[i] ?? { resultado: '', unidade: '', padrao: '', unidadePadrao: '', conforme: true }
     )
+    padded[2] = { ...padded[2], unidade: '', unidadePadrao: '' }
     setParametros(padded)
     setObservacoes(f.observacoes ?? '')
     setFornecedorError('')
+    setObservacoesError('')
     setShowForm(true)
   }
 
@@ -94,8 +98,13 @@ export default function Fichas() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!fornecedor.trim()) { setFornecedorError('Fornecedor é obrigatório'); return }
+    const forn = fornecedor.trim()
+    if (!forn) { setFornecedorError('Fornecedor é obrigatório'); return }
+    if (forn.length < 3) { setFornecedorError('Fornecedor deve ter pelo menos 3 caracteres'); return }
+    if (forn.length > 100) { setFornecedorError('Fornecedor deve ter no máximo 100 caracteres'); return }
     setFornecedorError('')
+    if (observacoes.length > 500) { setObservacoesError('Observação deve ter no máximo 500 caracteres'); return }
+    setObservacoesError('')
     setSaving(true)
     const payload = {
       fornecedor: fornecedor.trim(),
@@ -264,10 +273,11 @@ export default function Fichas() {
                             </td>
                             <td className="px-2 py-1.5">
                               <input
-                                value={parametros[i].unidade}
+                                value={i === 2 ? '' : parametros[i].unidade}
                                 onChange={(e) => updateParam(i, 'unidade', e.target.value)}
                                 placeholder="UN"
-                                className="w-full rounded-lg border border-zinc-700 bg-zinc-800/60 px-2 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-emerald-500 text-center"
+                                disabled={i === 2}
+                                className={`w-full rounded-lg border px-2 py-1.5 text-xs outline-none text-center ${i === 2 ? 'border-zinc-700/40 bg-zinc-800/20 text-zinc-600 cursor-not-allowed' : 'border-zinc-700 bg-zinc-800/60 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500'}`}
                               />
                             </td>
                             <td className="px-2 py-1.5">
@@ -280,10 +290,11 @@ export default function Fichas() {
                             </td>
                             <td className="px-2 py-1.5">
                               <input
-                                value={parametros[i].unidadePadrao}
+                                value={i === 2 ? '' : parametros[i].unidadePadrao}
                                 onChange={(e) => updateParam(i, 'unidadePadrao', e.target.value)}
                                 placeholder="UN"
-                                className="w-full rounded-lg border border-zinc-700 bg-zinc-800/60 px-2 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-emerald-500 text-center"
+                                disabled={i === 2}
+                                className={`w-full rounded-lg border px-2 py-1.5 text-xs outline-none text-center ${i === 2 ? 'border-zinc-700/40 bg-zinc-800/20 text-zinc-600 cursor-not-allowed' : 'border-zinc-700 bg-zinc-800/60 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500'}`}
                               />
                             </td>
                             <td className="px-2 py-1.5">
@@ -321,6 +332,7 @@ export default function Fichas() {
                     placeholder="Observações opcionais..."
                     className={inputCls}
                   />
+                  {observacoesError && <p className="mt-1 text-xs text-red-400">{observacoesError}</p>}
                 </div>
 
                 {/* Status global */}
