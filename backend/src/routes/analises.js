@@ -53,7 +53,7 @@ router.get('/', async (req, res) => {
 });
 
 // ── Exportar Excel ─────────────────────────────────────────────────────
-router.get('/exportar/excel', requirePerfil('ANALISTA', 'GESTOR'), async (req, res) => {
+router.get('/exportar/excel', requirePerfil('ANALISTA', 'GESTOR', 'COMPRAS'), async (req, res) => {
   try {
     const { nomeProdutor, dataInicio, dataFim } = req.query;
     const where = {};
