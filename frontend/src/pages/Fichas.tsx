@@ -3,15 +3,9 @@ import { Plus, X, Loader2, Search, FileDown, Pencil, Trash2 } from 'lucide-react
 import { api, type FichaEmbalagem, type Parametro } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 import Pagination from '../components/Pagination'
+import Toast from '../components/Toast'
 
-function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClose: () => void }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
-  return (
-    <div className={`fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-xl ${type === 'ok' ? 'bg-emerald-600' : 'bg-red-600'}`}>
-      {msg}<button onClick={onClose}><X size={14} /></button>
-    </div>
-  )
-}
+type ToastT = { msg: string; type: 'ok' | 'err' | 'info' | 'warn' }
 
 const PARAM_NAMES = ['Densidade', 'Dimensões', 'Visual / Impressões', 'Código de Barras']
 
@@ -37,7 +31,7 @@ export default function Fichas() {
   const [saving, setSaving] = useState(false)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
   const [confirmId, setConfirmId] = useState<number | null>(null)
-  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
+  const [toast, setToast] = useState<ToastT | null>(null)
   const [filters, setFilters] = useState({ status: '', dataInicio: '', dataFim: '' })
   const [pagina, setPagina] = useState(1)
   const [fornecedor, setFornecedor] = useState('')
@@ -112,15 +106,15 @@ export default function Fichas() {
     try {
       if (editingItem) {
         await api.fichas.update(editingItem.id, payload)
-        setToast({ msg: 'Ficha atualizada!', type: 'ok' })
+        setToast({ msg: 'Registro atualizado com sucesso!', type: 'ok' })
       } else {
         await api.fichas.create(payload)
-        setToast({ msg: 'Ficha criada!', type: 'ok' })
+        setToast({ msg: 'Registro salvo com sucesso!', type: 'ok' })
       }
       setShowForm(false)
       load(1)
     } catch (err) {
-      setToast({ msg: err instanceof Error ? err.message : 'Erro', type: 'err' })
+      setToast({ msg: err instanceof Error ? err.message : 'Erro ao salvar. Tente novamente.', type: 'err' })
     } finally {
       setSaving(false)
     }
@@ -129,20 +123,21 @@ export default function Fichas() {
   async function handleDelete(id: number) {
     try {
       await api.fichas.delete(id)
-      setToast({ msg: 'Ficha excluída!', type: 'ok' })
+      setToast({ msg: 'Registro excluído com sucesso!', type: 'ok' })
       setConfirmId(null)
       load(1)
     } catch (err) {
-      setToast({ msg: err instanceof Error ? err.message : 'Erro', type: 'err' })
+      setToast({ msg: 'Erro ao excluir. Tente novamente.', type: 'err' })
       setConfirmId(null)
     }
   }
 
   async function handleDownloadPdf(id: number) {
     setDownloadingId(id)
+    setToast({ msg: 'Gerando PDF, aguarde...', type: 'info' })
     try {
       const res = await api.fichas.downloadPdf(id)
-      if (!res.ok) throw new Error('Erro ao gerar PDF')
+      if (!res.ok) throw new Error()
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -150,8 +145,9 @@ export default function Fichas() {
       a.download = `FORQSE001-${String(id).padStart(4, '0')}.pdf`
       a.click()
       URL.revokeObjectURL(url)
+      setToast({ msg: 'Arquivo gerado com sucesso!', type: 'ok' })
     } catch {
-      setToast({ msg: 'Erro ao baixar PDF', type: 'err' })
+      setToast({ msg: 'Erro ao gerar o arquivo. Tente novamente.', type: 'err' })
     } finally {
       setDownloadingId(null)
     }

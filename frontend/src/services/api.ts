@@ -122,10 +122,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...authHeaders(), ...(options.headers ?? {}) },
   })
   if (res.status === 401) {
-    localStorage.removeItem('scq_token')
-    localStorage.removeItem('scq_user')
-    window.location.href = '/login'
-    throw new Error('Sessão expirada')
+    if (getToken()) {
+      localStorage.removeItem('scq_token')
+      localStorage.removeItem('scq_user')
+      sessionStorage.setItem('scq_session_expired', '1')
+      window.location.href = '/login'
+    }
+    throw new Error('Credenciais inválidas')
   }
   if (res.status === 204) return undefined as T
   if (!res.ok) {

@@ -3,15 +3,9 @@ import { Plus, X, Loader2, Search, FileSpreadsheet, Pencil, Trash2, Copy } from 
 import { api, type ColetaAmostra } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 import Pagination from '../components/Pagination'
+import Toast from '../components/Toast'
 
-function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClose: () => void }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
-  return (
-    <div className={`fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-xl ${type === 'ok' ? 'bg-emerald-600' : 'bg-red-600'}`}>
-      {msg}<button onClick={onClose}><X size={14} /></button>
-    </div>
-  )
-}
+type ToastT = { msg: string; type: 'ok' | 'err' | 'info' | 'warn' }
 
 function formatDate(iso: string): string {
   const [y, m, d] = iso.split('T')[0].split('-')
@@ -46,7 +40,7 @@ export default function Coletas() {
   const [saving, setSaving] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [confirmId, setConfirmId] = useState<number | null>(null)
-  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
+  const [toast, setToast] = useState<ToastT | null>(null)
   const [filters, setFilters] = useState({ destino: '', dataInicio: '', dataFim: '' })
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -114,15 +108,15 @@ export default function Coletas() {
     try {
       if (editingItem) {
         await api.coletas.update(editingItem.id, payload)
-        setToast({ msg: 'Coleta atualizada!', type: 'ok' })
+        setToast({ msg: 'Registro atualizado com sucesso!', type: 'ok' })
       } else {
         await api.coletas.create(payload)
-        setToast({ msg: 'Coleta registrada!', type: 'ok' })
+        setToast({ msg: 'Registro salvo com sucesso!', type: 'ok' })
       }
       setShowForm(false)
       setPage(1); load(1)
     } catch (err) {
-      setToast({ msg: err instanceof Error ? err.message : 'Erro', type: 'err' })
+      setToast({ msg: err instanceof Error ? err.message : 'Erro ao salvar. Tente novamente.', type: 'err' })
     } finally {
       setSaving(false)
     }
@@ -131,20 +125,25 @@ export default function Coletas() {
   async function handleDelete(id: number) {
     try {
       await api.coletas.delete(id)
-      setToast({ msg: 'Coleta excluída!', type: 'ok' })
+      setToast({ msg: 'Registro excluído com sucesso!', type: 'ok' })
       setConfirmId(null)
       setPage(1); load(1)
     } catch (err) {
-      setToast({ msg: err instanceof Error ? err.message : 'Erro', type: 'err' })
+      setToast({ msg: 'Erro ao excluir. Tente novamente.', type: 'err' })
       setConfirmId(null)
     }
   }
 
   async function handleExportar() {
+    if (coletas.length === 0) {
+      setToast({ msg: 'Nenhum registro encontrado para exportar.', type: 'warn' })
+      return
+    }
+    setToast({ msg: 'Gerando arquivo, aguarde...', type: 'info' })
     setExporting(true)
     try {
       const res = await api.coletas.exportar()
-      if (!res.ok) throw new Error('Erro ao exportar')
+      if (!res.ok) throw new Error()
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -152,8 +151,9 @@ export default function Coletas() {
       a.download = 'coletas-scq.xlsx'
       a.click()
       URL.revokeObjectURL(url)
+      setToast({ msg: 'Arquivo gerado com sucesso!', type: 'ok' })
     } catch {
-      setToast({ msg: 'Erro ao exportar Excel', type: 'err' })
+      setToast({ msg: 'Erro ao gerar o arquivo. Tente novamente.', type: 'err' })
     } finally {
       setExporting(false)
     }

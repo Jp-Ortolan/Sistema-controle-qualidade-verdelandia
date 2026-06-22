@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Loader2, X } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { api, type AuditLog } from '../services/api'
 import Pagination from '../components/Pagination'
+import Toast from '../components/Toast'
 
 const ACAO_COLOR: Record<string, string> = {
   CRIAR: 'bg-emerald-500/15 text-emerald-400',
@@ -24,21 +25,12 @@ function Badge({ label, colorCls }: { label: string; colorCls: string }) {
   )
 }
 
-function Toast({ msg, onClose }: { msg: string; onClose: () => void }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
-  return (
-    <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-xl">
-      {msg}<button onClick={onClose}><X size={14} /></button>
-    </div>
-  )
-}
-
 export default function Logs() {
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [total, setTotal] = useState(0)
   const [pagina, setPagina] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [toast, setToast] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
   const [filters, setFilters] = useState({ entidade: '', acao: '' })
 
   const limite = 10
@@ -55,7 +47,7 @@ export default function Logs() {
       setLogs(res.logs)
       setTotal(res.total)
     } catch {
-      setToast('Erro ao carregar logs')
+      setToast({ msg: 'Erro ao carregar logs', type: 'err' })
     } finally {
       setLoading(false)
     }
@@ -69,7 +61,7 @@ export default function Logs() {
 
   return (
     <div>
-      {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-semibold text-zinc-100">Logs de Auditoria</h1>

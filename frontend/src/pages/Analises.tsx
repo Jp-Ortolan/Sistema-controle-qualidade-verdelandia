@@ -3,15 +3,9 @@ import { Plus, X, Loader2, Search, Pencil, Trash2, Copy, FileSpreadsheet, FileTe
 import { api, type Analise, type Lote } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 import Pagination from '../components/Pagination'
+import Toast from '../components/Toast'
 
-function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClose: () => void }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
-  return (
-    <div className={`fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-xl ${type === 'ok' ? 'bg-emerald-600' : 'bg-red-600'}`}>
-      {msg}<button onClick={onClose}><X size={14} /></button>
-    </div>
-  )
-}
+type ToastT = { msg: string; type: 'ok' | 'err' | 'info' | 'warn' }
 
 function descontoLabel(pct: number): string {
   if (pct <= 0.3) return '0'
@@ -65,7 +59,7 @@ export default function Analises() {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [confirmId, setConfirmId] = useState<number | null>(null)
-  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
+  const [toast, setToast] = useState<ToastT | null>(null)
   const [filters, setFilters] = useState({ nomeProdutor: '', dataInicio: '', dataFim: '' })
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -152,15 +146,15 @@ export default function Analises() {
     try {
       if (editingItem) {
         await api.analises.update(editingItem.id, payload)
-        setToast({ msg: 'Análise atualizada!', type: 'ok' })
+        setToast({ msg: 'Registro atualizado com sucesso!', type: 'ok' })
       } else {
         await api.analises.create(payload)
-        setToast({ msg: 'Análise registrada!', type: 'ok' })
+        setToast({ msg: 'Registro salvo com sucesso!', type: 'ok' })
       }
       setShowForm(false)
       setPage(1); load(1)
     } catch (err) {
-      setToast({ msg: err instanceof Error ? err.message : 'Erro', type: 'err' })
+      setToast({ msg: err instanceof Error ? err.message : 'Erro ao salvar. Tente novamente.', type: 'err' })
     } finally {
       setSaving(false)
     }
@@ -169,11 +163,11 @@ export default function Analises() {
   async function handleDelete(id: number) {
     try {
       await api.analises.delete(id)
-      setToast({ msg: 'Análise excluída!', type: 'ok' })
+      setToast({ msg: 'Registro excluído com sucesso!', type: 'ok' })
       setConfirmId(null)
       setPage(1); load(1)
     } catch (err) {
-      setToast({ msg: err instanceof Error ? err.message : 'Erro', type: 'err' })
+      setToast({ msg: 'Erro ao excluir. Tente novamente.', type: 'err' })
       setConfirmId(null)
     }
   }
@@ -202,6 +196,11 @@ export default function Analises() {
   const canExportPdf   = perfil === 'ANALISTA' || perfil === 'GESTOR' || perfil === 'COMPRAS'
 
   async function handleExport(tipo: 'excel' | 'pdf') {
+    if (analises.length === 0) {
+      setToast({ msg: 'Nenhum registro encontrado para exportar.', type: 'warn' })
+      return
+    }
+    setToast({ msg: 'Gerando arquivo, aguarde...', type: 'info' })
     try {
       const f = {
         nomeProdutor: filters.nomeProdutor || undefined,
@@ -219,8 +218,9 @@ export default function Analises() {
       a.download = tipo === 'excel' ? 'analises.xlsx' : 'analises.pdf'
       a.click()
       URL.revokeObjectURL(url)
+      setToast({ msg: 'Arquivo gerado com sucesso!', type: 'ok' })
     } catch {
-      setToast({ msg: `Erro ao exportar ${tipo.toUpperCase()}`, type: 'err' })
+      setToast({ msg: 'Erro ao gerar o arquivo. Tente novamente.', type: 'err' })
     }
   }
 

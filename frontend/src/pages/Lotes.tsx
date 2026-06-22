@@ -3,15 +3,9 @@ import { Plus, X, Loader2, Pencil, Trash2 } from 'lucide-react'
 import { api, type Lote } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 import Pagination from '../components/Pagination'
+import Toast from '../components/Toast'
 
-function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClose: () => void }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
-  return (
-    <div className={`fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-xl ${type === 'ok' ? 'bg-emerald-600' : 'bg-red-600'}`}>
-      {msg}<button onClick={onClose}><X size={14} /></button>
-    </div>
-  )
-}
+type ToastT = { msg: string; type: 'ok' | 'err' | 'info' | 'warn' }
 
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr + 'T12:00:00.000Z')
@@ -46,7 +40,7 @@ export default function Lotes() {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [confirmId, setConfirmId] = useState<number | null>(null)
-  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
+  const [toast, setToast] = useState<ToastT | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<FormErrors>({})
 
@@ -120,15 +114,15 @@ export default function Lotes() {
     try {
       if (editingItem) {
         await api.lotes.update(editingItem.id, payload)
-        setToast({ msg: 'Lote atualizado!', type: 'ok' })
+        setToast({ msg: 'Registro atualizado com sucesso!', type: 'ok' })
       } else {
         await api.lotes.create(payload)
-        setToast({ msg: 'Lote cadastrado!', type: 'ok' })
+        setToast({ msg: 'Registro salvo com sucesso!', type: 'ok' })
       }
       setShowForm(false)
       setPage(1); load(1)
     } catch (err) {
-      setToast({ msg: err instanceof Error ? err.message : 'Erro', type: 'err' })
+      setToast({ msg: err instanceof Error ? err.message : 'Erro ao salvar. Tente novamente.', type: 'err' })
     } finally {
       setSaving(false)
     }
@@ -137,11 +131,11 @@ export default function Lotes() {
   async function handleDelete(id: number) {
     try {
       await api.lotes.delete(id)
-      setToast({ msg: 'Lote excluído!', type: 'ok' })
+      setToast({ msg: 'Registro excluído com sucesso!', type: 'ok' })
       setConfirmId(null)
       setPage(1); load(1)
     } catch (err) {
-      setToast({ msg: err instanceof Error ? err.message : 'Erro ao excluir', type: 'err' })
+      setToast({ msg: 'Erro ao excluir. Tente novamente.', type: 'err' })
       setConfirmId(null)
     }
   }

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { api } from '../services/api'
@@ -10,9 +10,22 @@ export default function Login() {
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    if (sessionStorage.getItem('scq_session_expired')) {
+      sessionStorage.removeItem('scq_session_expired')
+      setErro('Sua sessão expirou. Faça login novamente.')
+    }
+  }, [])
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setErro('')
+
+    if (!email.trim() || !senha.trim()) {
+      setErro('Preencha o e-mail e a senha para continuar.')
+      return
+    }
+
     setLoading(true)
     try {
       const res = await api.auth.login(email, senha)
@@ -20,7 +33,11 @@ export default function Login() {
       localStorage.setItem('scq_user', JSON.stringify({ email: res.email, perfil: res.perfil }))
       navigate('/dashboard')
     } catch (err) {
-      setErro(err instanceof Error ? err.message : 'Erro ao entrar')
+      if (err instanceof TypeError) {
+        setErro('Não foi possível conectar ao servidor. Tente novamente em instantes.')
+      } else {
+        setErro('E-mail ou senha incorretos. Verifique e tente novamente.')
+      }
     } finally {
       setLoading(false)
     }
@@ -138,7 +155,7 @@ export default function Login() {
           </div>
 
           <p className="mt-6 text-center text-xs text-stone-600">
-            © 2025 Ind. Ervateira Verdelândia LTDA
+            © 2026 Ind. Ervateira Verdelândia LTDA
           </p>
         </div>
       </div>
