@@ -214,8 +214,8 @@ export default function Analises() {
   const previewDesconto = !isNaN(pct) ? descontoLabel(pct) + '%' : '—'
   const showActions = canWrite || canDel || canExport
 
-  const canExportExcel = perfil === 'ANALISTA' || perfil === 'GESTOR'
-  const canExportPdf   = perfil === 'ANALISTA' || perfil === 'GESTOR' || perfil === 'COMPRAS'
+  const canExportExcel = canExport
+  const canExportPdf   = canExport
 
   async function handleExport(tipo: 'excel' | 'pdf') {
     if (analises.length === 0) {
