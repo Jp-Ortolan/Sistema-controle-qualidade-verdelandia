@@ -39,7 +39,6 @@ export default function Lotes() {
   const canDel = can.delete('lotes', perfil)
 
   const [lotes, setLotes] = useState<Lote[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
@@ -56,7 +55,6 @@ export default function Lotes() {
     try {
       const res = await api.lotes.list({ page: String(pg), limit: '10' })
       setLotes(res.data)
-      setTotal(res.total)
       setTotalPages(res.totalPages)
     } catch {
       setToast({ msg: 'Erro ao carregar lotes', type: 'err' })
