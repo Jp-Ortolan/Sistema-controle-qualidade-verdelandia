@@ -30,13 +30,18 @@ const INCLUDE = LOTE_INCLUDE;
 
 router.get('/', async (req, res) => {
   try {
-    const { nomeProdutor, dataInicio, dataFim } = req.query;
+    const { nomeProdutor, dataInicio, dataFim, page = '1', limit = '10' } = req.query;
     const where = {};
     if (nomeProdutor) where.nomeProdutor = { contains: nomeProdutor, mode: 'insensitive' };
     const dr = buildDateRange(dataInicio, dataFim);
     if (dr) where.createdAt = dr;
-    const analises = await prisma.analise.findMany({ where, include: INCLUDE, orderBy: { createdAt: 'desc' } });
-    return res.json(analises);
+    const take = parseInt(limit);
+    const skip = (parseInt(page) - 1) * take;
+    const [data, total] = await Promise.all([
+      prisma.analise.findMany({ where, include: INCLUDE, orderBy: { createdAt: 'desc' }, skip, take }),
+      prisma.analise.count({ where }),
+    ]);
+    return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / take) });
   } catch { return res.status(500).json({ error: 'Erro ao buscar análises' }); }
 });
 

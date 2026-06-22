@@ -50,6 +50,13 @@ export interface FichaList {
   limite: number
 }
 
+export interface Page<T> {
+  data: T[]
+  total: number
+  page: number
+  totalPages: number
+}
+
 export interface ColetaAmostra {
   id: number
   tipoProduto: string
@@ -161,15 +168,18 @@ export const api = {
   },
 
   lotes: {
-    list: () => request<Lote[]>('/lotes'),
+    list: (params?: { page?: string; limit?: string }) =>
+      request<Page<Lote>>(`/lotes${buildParams(params ?? {})}`),
+    listAll: () =>
+      request<Page<Lote>>(`/lotes${buildParams({ limit: '500' })}`),
     create: (data: LoteInput) => request<Lote>('/lotes', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: number, data: LoteInput) => request<Lote>(`/lotes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) => request<void>(`/lotes/${id}`, { method: 'DELETE' }),
   },
 
   analises: {
-    list: (filters?: { nomeProdutor?: string; dataInicio?: string; dataFim?: string }) =>
-      request<Analise[]>(`/analises${buildParams(filters ?? {})}`),
+    list: (filters?: { nomeProdutor?: string; dataInicio?: string; dataFim?: string; page?: string; limit?: string }) =>
+      request<Page<Analise>>(`/analises${buildParams(filters ?? {})}`),
     create: (data: AnaliseInput) => request<Analise>('/analises', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: number, data: AnaliseInput) => request<Analise>(`/analises/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) => request<void>(`/analises/${id}`, { method: 'DELETE' }),
@@ -189,8 +199,8 @@ export const api = {
   },
 
   coletas: {
-    list: (filters?: { tipoProduto?: string; destino?: string; dataInicio?: string; dataFim?: string }) =>
-      request<ColetaAmostra[]>(`/coletas${buildParams(filters ?? {})}`),
+    list: (filters?: { tipoProduto?: string; destino?: string; dataInicio?: string; dataFim?: string; page?: string; limit?: string }) =>
+      request<Page<ColetaAmostra>>(`/coletas${buildParams(filters ?? {})}`),
     create: (data: ColetaInput) => request<ColetaAmostra>('/coletas', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: number, data: ColetaInput) => request<ColetaAmostra>(`/coletas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) => request<void>(`/coletas/${id}`, { method: 'DELETE' }),

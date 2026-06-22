@@ -39,14 +39,19 @@ router.get('/exportar', async (_req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const { tipoProduto, destino, dataInicio, dataFim } = req.query;
+    const { tipoProduto, destino, dataInicio, dataFim, page = '1', limit = '10' } = req.query;
     const where = {};
     if (tipoProduto) where.tipoProduto = { contains: tipoProduto };
     if (destino) where.destino = { contains: destino };
     const dr = buildDateRange(dataInicio, dataFim);
     if (dr) where.dataColeta = dr;
-    const coletas = await prisma.coletaAmostra.findMany({ where, orderBy: { dataColeta: 'desc' } });
-    return res.json(coletas);
+    const take = parseInt(limit);
+    const skip = (parseInt(page) - 1) * take;
+    const [data, total] = await Promise.all([
+      prisma.coletaAmostra.findMany({ where, orderBy: { dataColeta: 'desc' }, skip, take }),
+      prisma.coletaAmostra.count({ where }),
+    ]);
+    return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / take) });
   } catch { return res.status(500).json({ error: 'Erro ao buscar coletas' }); }
 });
 

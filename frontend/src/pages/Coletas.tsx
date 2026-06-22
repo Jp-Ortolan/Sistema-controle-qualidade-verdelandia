@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { Plus, X, Loader2, Search, FileSpreadsheet, Pencil, Trash2, Copy } from 'lucide-react'
 import { api, type ColetaAmostra } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
+import Pagination from '../components/Pagination'
 
 function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClose: () => void }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
@@ -37,6 +38,8 @@ export default function Coletas() {
   const canExport = can.export('coletas', perfil)
 
   const [coletas, setColetas] = useState<ColetaAmostra[]>([])
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [editingItem, setEditingItem] = useState<ColetaAmostra | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -48,15 +51,18 @@ export default function Coletas() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<FormErrors>({})
 
-  async function load() {
+  async function load(pg = page) {
     setLoading(true)
     try {
-      const c = await api.coletas.list({
+      const res = await api.coletas.list({
         destino: filters.destino || undefined,
         dataInicio: filters.dataInicio || undefined,
         dataFim: filters.dataFim || undefined,
+        page: String(pg),
+        limit: '10',
       })
-      setColetas(c)
+      setColetas(res.data)
+      setTotalPages(res.totalPages)
     } catch {
       setToast({ msg: 'Erro ao carregar dados', type: 'err' })
     } finally {
@@ -64,7 +70,13 @@ export default function Coletas() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(1) }, [])
+
+  function handlePageChange(pg: number) {
+    setPage(pg)
+    load(pg)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   function openCreate() {
     setEditingItem(null)
@@ -108,7 +120,7 @@ export default function Coletas() {
         setToast({ msg: 'Coleta registrada!', type: 'ok' })
       }
       setShowForm(false)
-      load()
+      setPage(1); load(1)
     } catch (err) {
       setToast({ msg: err instanceof Error ? err.message : 'Erro', type: 'err' })
     } finally {
@@ -121,7 +133,7 @@ export default function Coletas() {
       await api.coletas.delete(id)
       setToast({ msg: 'Coleta excluída!', type: 'ok' })
       setConfirmId(null)
-      load()
+      setPage(1); load(1)
     } catch (err) {
       setToast({ msg: err instanceof Error ? err.message : 'Erro', type: 'err' })
       setConfirmId(null)
@@ -211,7 +223,7 @@ export default function Coletas() {
           className="flex-1 min-w-[120px] rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
         />
         <button
-          onClick={load}
+          onClick={() => { setPage(1); load(1) }}
           className="flex items-center gap-2 rounded-xl bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-600"
         >
           <Search size={15} /> Filtrar
@@ -292,76 +304,67 @@ export default function Coletas() {
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-emerald-500" /></div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-zinc-700/60 shadow-lg">
-          <table className="w-full min-w-[640px]">
-            <thead>
-              <tr>
-                {[
-                  '#', 'Tipo Produto', 'Destino', 'Data Coleta', 'Cadastro',
-                  ...(showActions ? ['Ações'] : []),
-                ].map((h) => (
-                  <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {coletas.length === 0 ? (
+        <div>
+          <div className="overflow-x-auto rounded-xl border border-zinc-700/60 shadow-lg">
+            <table className="w-full min-w-[640px]">
+              <thead>
                 <tr>
-                  <td colSpan={showActions ? 6 : 5} className="py-10 text-center text-sm text-zinc-600">
-                    Nenhuma coleta encontrada
-                  </td>
+                  {[
+                    '#', 'Tipo Produto', 'Destino', 'Data Coleta', 'Cadastro',
+                    ...(showActions ? ['Ações'] : []),
+                  ].map((h) => (
+                    <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>
+                  ))}
                 </tr>
-              ) : coletas.map((c) => (
-                <tr key={c.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">{c.id}</td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">{c.tipoProduto}</td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{c.destino}</td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{formatDate(c.dataColeta)}</td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">{new Date(c.createdAt).toLocaleDateString('pt-BR')}</td>
-                  {showActions && (
-                    <td className="border-t border-zinc-800 px-4 py-2 text-center">
-                      {confirmId === c.id ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <button onClick={() => handleDelete(c.id)} className="text-xs font-semibold text-red-400 hover:text-red-300">Confirmar</button>
-                          <button onClick={() => setConfirmId(null)} className="text-xs text-zinc-500 hover:text-zinc-300">Cancelar</button>
-                        </span>
-                      ) : (
-                        <span className="flex items-center justify-center gap-2">
-                          {canExport && (
-                            <button
-                              onClick={() => handleCopy(c)}
-                              className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-blue-400"
-                              title="Copiar"
-                            >
-                              <Copy size={14} />
-                            </button>
-                          )}
-                          {canWrite && (
-                            <button
-                              onClick={() => openEdit(c)}
-                              className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-emerald-400"
-                              title="Editar"
-                            >
-                              <Pencil size={14} />
-                            </button>
-                          )}
-                          {canDel && (
-                            <button
-                              onClick={() => setConfirmId(c.id)}
-                              className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-red-400"
-                              title="Excluir"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </span>
-                      )}
+              </thead>
+              <tbody>
+                {coletas.length === 0 ? (
+                  <tr>
+                    <td colSpan={showActions ? 6 : 5} className="py-10 text-center text-sm text-zinc-600">
+                      Nenhuma coleta encontrada
                     </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </tr>
+                ) : coletas.map((c) => (
+                  <tr key={c.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">{c.id}</td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">{c.tipoProduto}</td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{c.destino}</td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{formatDate(c.dataColeta)}</td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">{new Date(c.createdAt).toLocaleDateString('pt-BR')}</td>
+                    {showActions && (
+                      <td className="border-t border-zinc-800 px-4 py-2 text-center">
+                        {confirmId === c.id ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <button onClick={() => handleDelete(c.id)} className="text-xs font-semibold text-red-400 hover:text-red-300">Confirmar</button>
+                            <button onClick={() => setConfirmId(null)} className="text-xs text-zinc-500 hover:text-zinc-300">Cancelar</button>
+                          </span>
+                        ) : (
+                          <span className="flex items-center justify-center gap-2">
+                            {canExport && (
+                              <button onClick={() => handleCopy(c)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-blue-400" title="Copiar">
+                                <Copy size={14} />
+                              </button>
+                            )}
+                            {canWrite && (
+                              <button onClick={() => openEdit(c)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-emerald-400" title="Editar">
+                                <Pencil size={14} />
+                              </button>
+                            )}
+                            {canDel && (
+                              <button onClick={() => setConfirmId(c.id)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-red-400" title="Excluir">
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </div>
       )}
     </div>

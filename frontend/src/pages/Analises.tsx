@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { Plus, X, Loader2, Search, Pencil, Trash2, Copy, FileSpreadsheet, FileText } from 'lucide-react'
 import { api, type Analise, type Lote } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
+import Pagination from '../components/Pagination'
 
 function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClose: () => void }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
@@ -57,6 +58,8 @@ export default function Analises() {
 
   const [analises, setAnalises] = useState<Analise[]>([])
   const [lotes, setLotes] = useState<Lote[]>([])
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [editingItem, setEditingItem] = useState<Analise | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -67,7 +70,7 @@ export default function Analises() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<FormErrors>({})
 
-  async function load() {
+  async function load(pg = page) {
     setLoading(true)
     try {
       const [a, l] = await Promise.all([
@@ -75,11 +78,14 @@ export default function Analises() {
           nomeProdutor: filters.nomeProdutor || undefined,
           dataInicio: filters.dataInicio || undefined,
           dataFim: filters.dataFim || undefined,
+          page: String(pg),
+          limit: '10',
         }),
-        api.lotes.list(),
+        api.lotes.listAll(),
       ])
-      setAnalises(a)
-      setLotes(l)
+      setAnalises(a.data)
+      setTotalPages(a.totalPages)
+      setLotes(l.data)
     } catch {
       setToast({ msg: 'Erro ao carregar dados', type: 'err' })
     } finally {
@@ -87,7 +93,13 @@ export default function Analises() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(1) }, [])
+
+  function handlePageChange(pg: number) {
+    setPage(pg)
+    load(pg)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   function openCreate() {
     setEditingItem(null)
@@ -146,7 +158,7 @@ export default function Analises() {
         setToast({ msg: 'Análise registrada!', type: 'ok' })
       }
       setShowForm(false)
-      load()
+      setPage(1); load(1)
     } catch (err) {
       setToast({ msg: err instanceof Error ? err.message : 'Erro', type: 'err' })
     } finally {
@@ -159,7 +171,7 @@ export default function Analises() {
       await api.analises.delete(id)
       setToast({ msg: 'Análise excluída!', type: 'ok' })
       setConfirmId(null)
-      load()
+      setPage(1); load(1)
     } catch (err) {
       setToast({ msg: err instanceof Error ? err.message : 'Erro', type: 'err' })
       setConfirmId(null)
@@ -269,7 +281,7 @@ export default function Analises() {
           className="flex-1 min-w-[120px] rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
         />
         <button
-          onClick={load}
+          onClick={() => { setPage(1); load(1) }}
           className="flex items-center gap-2 rounded-xl bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-600"
         >
           <Search size={15} /> Filtrar
@@ -450,81 +462,84 @@ export default function Analises() {
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-emerald-500" /></div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-zinc-700/60 shadow-lg">
-          <table className="w-full min-w-[820px]">
-            <thead>
-              <tr>
-                {[
-                  'Ticket', 'Produtor', 'Lote', 'Palito % (Erva)', 'Teor Pó %', 'Umidade %', 'Desconto', 'Data',
-                  ...(showActions ? ['Ações'] : []),
-                ].map((h) => (
-                  <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {analises.length === 0 ? (
+        <div>
+          <div className="overflow-x-auto rounded-xl border border-zinc-700/60 shadow-lg">
+            <table className="w-full min-w-[820px]">
+              <thead>
                 <tr>
-                  <td colSpan={showActions ? 9 : 8} className="py-10 text-center text-sm text-zinc-600">
-                    Nenhuma análise encontrada
-                  </td>
+                  {[
+                    'Ticket', 'Produtor', 'Lote', 'Palito % (Erva)', 'Teor Pó %', 'Umidade %', 'Desconto', 'Data',
+                    ...(showActions ? ['Ações'] : []),
+                  ].map((h) => (
+                    <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>
+                  ))}
                 </tr>
-              ) : analises.map((a) => (
-                <tr key={a.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center font-mono text-sm text-emerald-400">
-                    {a.ticket ?? <span className="text-zinc-600">—</span>}
-                  </td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">{a.nomeProdutor}</td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-400">
-                    {a.lote ? a.lote.codigo : <span className="text-zinc-600">—</span>}
-                  </td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{a.percentualPalito}%</td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">
-                    {a.teorPo != null ? `${a.teorPo}%` : <span className="text-zinc-600">—</span>}
-                  </td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">
-                    {a.umidade != null ? `${a.umidade}%` : <span className="text-zinc-600">—</span>}
-                  </td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center">
-                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${a.desconto === 0 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>
-                      {a.desconto}%
-                    </span>
-                  </td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">
-                    {formatDate(a.dataAnalise)}
-                  </td>
-                  {showActions && (
-                    <td className="border-t border-zinc-800 px-4 py-2 text-center">
-                      {confirmId === a.id ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <button onClick={() => handleDelete(a.id)} className="text-xs font-semibold text-red-400 hover:text-red-300">Confirmar</button>
-                          <button onClick={() => setConfirmId(null)} className="text-xs text-zinc-500 hover:text-zinc-300">Cancelar</button>
-                        </span>
-                      ) : (
-                        <span className="flex items-center justify-center gap-2">
-                          {canExport && (
-                            <button onClick={() => handleCopy(a)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-blue-400" title="Copiar">
-                              <Copy size={14} />
-                            </button>
-                          )}
-                          {canWrite && (
-                            <button onClick={() => openEdit(a)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-emerald-400" title="Editar">
-                              <Pencil size={14} />
-                            </button>
-                          )}
-                          {canDel && (
-                            <button onClick={() => setConfirmId(a.id)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-red-400" title="Excluir">
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </span>
-                      )}
+              </thead>
+              <tbody>
+                {analises.length === 0 ? (
+                  <tr>
+                    <td colSpan={showActions ? 9 : 8} className="py-10 text-center text-sm text-zinc-600">
+                      Nenhuma análise encontrada
                     </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </tr>
+                ) : analises.map((a) => (
+                  <tr key={a.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center font-mono text-sm text-emerald-400">
+                      {a.ticket ?? <span className="text-zinc-600">—</span>}
+                    </td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">{a.nomeProdutor}</td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-400">
+                      {a.lote ? a.lote.codigo : <span className="text-zinc-600">—</span>}
+                    </td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{a.percentualPalito}%</td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">
+                      {a.teorPo != null ? `${a.teorPo}%` : <span className="text-zinc-600">—</span>}
+                    </td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">
+                      {a.umidade != null ? `${a.umidade}%` : <span className="text-zinc-600">—</span>}
+                    </td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center">
+                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${a.desconto === 0 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>
+                        {a.desconto}%
+                      </span>
+                    </td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">
+                      {formatDate(a.dataAnalise)}
+                    </td>
+                    {showActions && (
+                      <td className="border-t border-zinc-800 px-4 py-2 text-center">
+                        {confirmId === a.id ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <button onClick={() => handleDelete(a.id)} className="text-xs font-semibold text-red-400 hover:text-red-300">Confirmar</button>
+                            <button onClick={() => setConfirmId(null)} className="text-xs text-zinc-500 hover:text-zinc-300">Cancelar</button>
+                          </span>
+                        ) : (
+                          <span className="flex items-center justify-center gap-2">
+                            {canExport && (
+                              <button onClick={() => handleCopy(a)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-blue-400" title="Copiar">
+                                <Copy size={14} />
+                              </button>
+                            )}
+                            {canWrite && (
+                              <button onClick={() => openEdit(a)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-emerald-400" title="Editar">
+                                <Pencil size={14} />
+                              </button>
+                            )}
+                            {canDel && (
+                              <button onClick={() => setConfirmId(a.id)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-red-400" title="Excluir">
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </div>
       )}
     </div>

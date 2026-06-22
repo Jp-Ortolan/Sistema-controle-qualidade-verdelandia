@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { Plus, X, Loader2, Pencil, Trash2 } from 'lucide-react'
 import { api, type Lote } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
+import Pagination from '../components/Pagination'
 
 function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClose: () => void }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
@@ -38,6 +39,9 @@ export default function Lotes() {
   const canDel = can.delete('lotes', perfil)
 
   const [lotes, setLotes] = useState<Lote[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [editingItem, setEditingItem] = useState<Lote | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -47,9 +51,13 @@ export default function Lotes() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<FormErrors>({})
 
-  async function load() {
+  async function load(pg = page) {
+    setLoading(true)
     try {
-      setLotes(await api.lotes.list())
+      const res = await api.lotes.list({ page: String(pg), limit: '10' })
+      setLotes(res.data)
+      setTotal(res.total)
+      setTotalPages(res.totalPages)
     } catch {
       setToast({ msg: 'Erro ao carregar lotes', type: 'err' })
     } finally {
@@ -57,7 +65,13 @@ export default function Lotes() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(1) }, [])
+
+  function handlePageChange(pg: number) {
+    setPage(pg)
+    load(pg)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   function openCreate() {
     setEditingItem(null)
@@ -114,7 +128,7 @@ export default function Lotes() {
         setToast({ msg: 'Lote cadastrado!', type: 'ok' })
       }
       setShowForm(false)
-      load()
+      setPage(1); load(1)
     } catch (err) {
       setToast({ msg: err instanceof Error ? err.message : 'Erro', type: 'err' })
     } finally {
@@ -127,7 +141,7 @@ export default function Lotes() {
       await api.lotes.delete(id)
       setToast({ msg: 'Lote excluído!', type: 'ok' })
       setConfirmId(null)
-      load()
+      setPage(1); load(1)
     } catch (err) {
       setToast({ msg: err instanceof Error ? err.message : 'Erro ao excluir', type: 'err' })
       setConfirmId(null)
@@ -253,63 +267,66 @@ export default function Lotes() {
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-emerald-500" /></div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-zinc-700/60 shadow-lg">
-          <table className="w-full min-w-[640px]">
-            <thead>
-              <tr>
-                {['#', 'Código', 'Produto', 'Período', 'Observação', 'Cadastro', ...(showActions ? ['Ações'] : [])].map((h) => (
-                  <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {lotes.length === 0 ? (
+        <div>
+          <div className="overflow-x-auto rounded-xl border border-zinc-700/60 shadow-lg">
+            <table className="w-full min-w-[640px]">
+              <thead>
                 <tr>
-                  <td colSpan={showActions ? 7 : 6} className="py-10 text-center text-sm text-zinc-600">
-                    Nenhum lote cadastrado
-                  </td>
+                  {['#', 'Código', 'Produto', 'Período', 'Observação', 'Cadastro', ...(showActions ? ['Ações'] : [])].map((h) => (
+                    <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>
+                  ))}
                 </tr>
-              ) : lotes.map((l) => (
-                <tr key={l.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">{l.id}</td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">{l.codigo}</td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{l.produto}</td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">
-                    {formatPeriodo(l.dataInicio, l.dataFim)}
-                  </td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-400">
-                    {l.observacao ?? <span className="text-zinc-600">—</span>}
-                  </td>
-                  <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">
-                    {new Date(l.createdAt).toLocaleDateString('pt-BR')}
-                  </td>
-                  {showActions && (
-                    <td className="border-t border-zinc-800 px-4 py-2 text-center">
-                      {confirmId === l.id ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <button onClick={() => handleDelete(l.id)} className="text-xs font-semibold text-red-400 hover:text-red-300">Confirmar</button>
-                          <button onClick={() => setConfirmId(null)} className="text-xs text-zinc-500 hover:text-zinc-300">Cancelar</button>
-                        </span>
-                      ) : (
-                        <span className="flex items-center justify-center gap-2">
-                          {canWrite && (
-                            <button onClick={() => openEdit(l)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-emerald-400" title="Editar">
-                              <Pencil size={14} />
-                            </button>
-                          )}
-                          {canDel && (
-                            <button onClick={() => setConfirmId(l.id)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-red-400" title="Excluir">
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </span>
-                      )}
+              </thead>
+              <tbody>
+                {lotes.length === 0 ? (
+                  <tr>
+                    <td colSpan={showActions ? 7 : 6} className="py-10 text-center text-sm text-zinc-600">
+                      Nenhum lote cadastrado
                     </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </tr>
+                ) : lotes.map((l) => (
+                  <tr key={l.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">{l.id}</td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">{l.codigo}</td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{l.produto}</td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">
+                      {formatPeriodo(l.dataInicio, l.dataFim)}
+                    </td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-400">
+                      {l.observacao ?? <span className="text-zinc-600">—</span>}
+                    </td>
+                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">
+                      {new Date(l.createdAt).toLocaleDateString('pt-BR')}
+                    </td>
+                    {showActions && (
+                      <td className="border-t border-zinc-800 px-4 py-2 text-center">
+                        {confirmId === l.id ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <button onClick={() => handleDelete(l.id)} className="text-xs font-semibold text-red-400 hover:text-red-300">Confirmar</button>
+                            <button onClick={() => setConfirmId(null)} className="text-xs text-zinc-500 hover:text-zinc-300">Cancelar</button>
+                          </span>
+                        ) : (
+                          <span className="flex items-center justify-center gap-2">
+                            {canWrite && (
+                              <button onClick={() => openEdit(l)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-emerald-400" title="Editar">
+                                <Pencil size={14} />
+                              </button>
+                            )}
+                            {canDel && (
+                              <button onClick={() => setConfirmId(l.id)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-red-400" title="Excluir">
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </div>
       )}
     </div>

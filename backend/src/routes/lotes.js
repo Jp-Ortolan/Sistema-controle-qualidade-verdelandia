@@ -15,10 +15,16 @@ const loteSchema = z.object({
   observacao: z.string().optional(),
 });
 
-router.get('/', async (_req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const lotes = await prisma.lote.findMany({ orderBy: { createdAt: 'desc' } });
-    return res.json(lotes);
+    const { page = '1', limit = '10' } = req.query;
+    const take = parseInt(limit);
+    const skip = (parseInt(page) - 1) * take;
+    const [data, total] = await Promise.all([
+      prisma.lote.findMany({ orderBy: { createdAt: 'desc' }, skip, take }),
+      prisma.lote.count(),
+    ]);
+    return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / take) });
   } catch {
     return res.status(500).json({ error: 'Erro ao buscar lotes' });
   }

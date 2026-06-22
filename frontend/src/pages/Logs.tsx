@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Loader2, X } from 'lucide-react'
 import { api, type AuditLog } from '../services/api'
+import Pagination from '../components/Pagination'
 
 const ACAO_COLOR: Record<string, string> = {
   CRIAR: 'bg-emerald-500/15 text-emerald-400',
@@ -40,7 +41,7 @@ export default function Logs() {
   const [toast, setToast] = useState<string | null>(null)
   const [filters, setFilters] = useState({ entidade: '', acao: '' })
 
-  const limite = 50
+  const limite = 10
 
   async function load(pg = pagina) {
     setLoading(true)
@@ -158,26 +159,11 @@ export default function Logs() {
             </table>
           </div>
 
-          {/* Paginação */}
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <button
-                onClick={() => { const p = Math.max(1, pagina - 1); setPagina(p); load(p) }}
-                disabled={pagina === 1}
-                className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 disabled:opacity-40"
-              >
-                ← Anterior
-              </button>
-              <span className="text-sm text-zinc-500">{pagina} / {totalPages}</span>
-              <button
-                onClick={() => { const p = Math.min(totalPages, pagina + 1); setPagina(p); load(p) }}
-                disabled={pagina === totalPages}
-                className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 disabled:opacity-40"
-              >
-                Próxima →
-              </button>
-            </div>
-          )}
+          <Pagination
+            page={pagina}
+            totalPages={totalPages}
+            onPageChange={(p) => { setPagina(p); load(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+          />
         </>
       )}
     </div>

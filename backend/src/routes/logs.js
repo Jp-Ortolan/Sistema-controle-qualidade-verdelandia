@@ -9,7 +9,7 @@ router.use(requirePerfil('GESTOR'));
 
 router.get('/', async (req, res) => {
   try {
-    const { entidade, acao, pagina = '1', limite = '50' } = req.query;
+    const { entidade, acao, pagina = '1', limite = '10' } = req.query;
     const where = {};
     if (entidade) where.entidade = entidade;
     if (acao) where.acao = acao;

@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { Plus, X, Loader2, Search, FileDown, Pencil, Trash2 } from 'lucide-react'
 import { api, type FichaEmbalagem, type Parametro } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
+import Pagination from '../components/Pagination'
 
 function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClose: () => void }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
@@ -431,27 +432,11 @@ export default function Fichas() {
             </table>
           </div>
 
-          {totalPaginas > 1 && (
-            <div className="mt-4 flex items-center justify-between text-sm text-zinc-500">
-              <span>{data.total} fichas · página {pagina} de {totalPaginas}</span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPagina((p) => Math.max(1, p - 1))}
-                  disabled={pagina === 1}
-                  className="rounded-lg border border-zinc-700 px-3 py-1.5 transition hover:bg-zinc-800 disabled:opacity-40"
-                >
-                  ← Anterior
-                </button>
-                <button
-                  onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
-                  disabled={pagina === totalPaginas}
-                  className="rounded-lg border border-zinc-700 px-3 py-1.5 transition hover:bg-zinc-800 disabled:opacity-40"
-                >
-                  Próxima →
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            page={pagina}
+            totalPages={totalPaginas}
+            onPageChange={(p) => { setPagina(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+          />
         </>
       )}
     </div>
