@@ -7,17 +7,12 @@ import {
   LoadingState, EmptyState, Table, Thead, Tr, Td,
 } from '../components/ui'
 
+// Cor com significado real: cria/edita/exclui é um estado. Entidade é só uma
+// categoria, então usa tom neutro — cor não deve virar decoração.
 const ACAO_TONE: Record<string, Tone> = {
   CRIAR: 'success',
   EDITAR: 'info',
   EXCLUIR: 'danger',
-}
-
-const ENTIDADE_TONE: Record<string, Tone> = {
-  ANALISE: 'accent',
-  FICHA: 'primary',
-  COLETA: 'warning',
-  LOTE: 'info',
 }
 
 const DETALHE_LABEL: Record<string, string> = {
@@ -122,7 +117,7 @@ export default function Logs() {
                     <Badge tone={ACAO_TONE[l.acao] ?? 'neutral'}>{l.acao}</Badge>
                   </Td>
                   <Td>
-                    <Badge tone={ENTIDADE_TONE[l.entidade] ?? 'neutral'}>{l.entidade}</Badge>
+                    <Badge tone="neutral">{l.entidade}</Badge>
                   </Td>
                   <Td className="font-mono text-xs text-muted-foreground">#{l.entidadeId}</Td>
                   <Td align="left" className="text-xs text-muted-foreground max-w-[260px] truncate" title={formatDetalhes(l.detalhes)}>

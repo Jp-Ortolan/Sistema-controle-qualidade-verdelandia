@@ -19,14 +19,14 @@ interface Props {
   tone?: Tone
 }
 
-export default function MetricCard({ icon: Icon, label, value, tone = 'primary' }: Props) {
+export default function MetricCard({ icon: Icon, label, value, tone = 'neutral' }: Props) {
   return (
     <Card>
       <div className="flex items-start justify-between">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
         <Icon size={16} className={ICON_TONE_CLS[tone]} />
       </div>
-      <p className="mt-2 text-3xl font-bold text-foreground">{value}</p>
+      <p className="mt-2 font-mono text-3xl font-bold text-foreground">{value}</p>
     </Card>
   )
 }

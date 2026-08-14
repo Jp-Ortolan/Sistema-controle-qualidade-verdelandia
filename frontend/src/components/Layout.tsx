@@ -1,20 +1,44 @@
-import { useState, useEffect, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode, type ElementType } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   BarChart3, ClipboardList, FlaskConical, Package, Menu, X,
   LogOut, Layers, ScrollText, Sun, Moon,
 } from 'lucide-react'
-import { getPerfil, can } from '../lib/permissions'
+import { getPerfil, can, type Resource } from '../lib/permissions'
 import { getInitialTheme, applyTheme, persistTheme } from '../lib/theme'
 
-const ALL_NAV = [
-  { to: '/dashboard', icon: BarChart3,    label: 'Dashboard',            resource: null },
-  { to: '/lotes',     icon: Layers,       label: 'Lotes',                resource: 'lotes'    as const },
-  { to: '/analises',  icon: FlaskConical, label: 'Análises de Erva-Mate',resource: 'analises' as const },
-  { to: '/fichas',    icon: Package,      label: 'Fichas de Embalagem',  resource: 'fichas'   as const },
-  { to: '/coletas',   icon: ClipboardList,label: 'Coletas de Amostra',   resource: 'coletas'  as const },
-  { to: '/logs',      icon: ScrollText,   label: 'Logs de Auditoria',    resource: 'logs'     as const },
+interface NavItem {
+  to: string
+  icon: ElementType
+  label: string
+  resource: Resource | null
+}
+
+const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+  {
+    label: 'Operação',
+    items: [
+      { to: '/dashboard', icon: BarChart3,    label: 'Dashboard',          resource: null },
+      { to: '/lotes',     icon: Layers,       label: 'Lotes',              resource: 'lotes' },
+      { to: '/analises',  icon: FlaskConical, label: 'Análises',           resource: 'analises' },
+      { to: '/coletas',   icon: ClipboardList,label: 'Coletas de Amostra', resource: 'coletas' },
+    ],
+  },
+  {
+    label: 'Qualidade',
+    items: [
+      { to: '/fichas', icon: Package, label: 'Fichas de Embalagem', resource: 'fichas' },
+    ],
+  },
+  {
+    label: 'Administração',
+    items: [
+      { to: '/logs', icon: ScrollText, label: 'Logs de Auditoria', resource: 'logs' },
+    ],
+  },
 ]
+
+const ALL_NAV = NAV_GROUPS.flatMap((g) => g.items)
 
 export default function Layout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
@@ -38,7 +62,9 @@ export default function Layout({ children }: { children: ReactNode }) {
     persistTheme(next)
   }
 
-  const nav = ALL_NAV.filter((n) => n.resource === null || can.view(n.resource, perfil))
+  const navGroups = NAV_GROUPS
+    .map((g) => ({ ...g, items: g.items.filter((n) => n.resource === null || can.view(n.resource, perfil)) }))
+    .filter((g) => g.items.length > 0)
   const pageTitle =
     ALL_NAV.find((n) => location.pathname.startsWith(n.to) && n.to !== '/dashboard')?.label
     ?? (location.pathname === '/dashboard' ? 'Dashboard' : 'SCQ')
@@ -130,23 +156,32 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Navegação */}
-        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-          {nav.map(({ to, icon: Icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition border ${
-                  isActive
-                    ? 'bg-primary/10 text-primary border-primary/40'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground border-transparent'
-                }`
-              }
-            >
-              <Icon size={16} className="shrink-0" />
-              <span className="truncate">{label}</span>
-            </NavLink>
+        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+          {navGroups.map((group) => (
+            <div key={group.label}>
+              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {group.items.map(({ to, icon: Icon, label }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    onClick={() => setOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition border ${
+                        isActive
+                          ? 'bg-primary/10 text-primary border-primary/40'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground border-transparent'
+                      }`
+                    }
+                  >
+                    <Icon size={16} className="shrink-0" />
+                    <span className="truncate">{label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 

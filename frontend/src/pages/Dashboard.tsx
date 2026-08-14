@@ -7,7 +7,7 @@ import { FlaskConical, Package, ClipboardList } from 'lucide-react'
 import { api, type DashboardData } from '../services/api'
 import { Card, MetricCard, LoadingState, EmptyState, Badge, Table, Thead, Tr, Td } from '../components/ui'
 
-const PIE_COLORS = ['#1f7a4d', '#b91c1c']
+const PIE_COLORS = ['var(--color-success)', 'var(--color-danger)']
 
 const chartTooltipStyle = {
   contentStyle: { backgroundColor: 'var(--color-surface-elevated)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 },
@@ -58,21 +58,21 @@ export default function Dashboard() {
       {/* 4 cards de resumo */}
       {data && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <MetricCard icon={FlaskConical} label="Total de Análises" value={data.totalAnalises} tone="primary" />
-          <MetricCard icon={FlaskConical} label="Análises esta semana" value={data.analisesEstaSemana} tone="accent" />
+          <MetricCard icon={FlaskConical} label="Total de Análises" value={data.totalAnalises} tone="neutral" />
+          <MetricCard icon={FlaskConical} label="Análises esta semana" value={data.analisesEstaSemana} tone="neutral" />
           <Card>
             <div className="flex items-start justify-between">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Fichas</p>
-              <Package size={16} className="text-info" />
+              <Package size={16} className="text-muted-foreground" />
             </div>
-            <p className="mt-2 text-lg font-bold text-success">
+            <p className="mt-2 font-mono text-lg font-bold text-success">
               {data.fichasConformes} <span className="text-xs font-normal text-muted-foreground">conf.</span>
             </p>
-            <p className="text-lg font-bold text-danger">
+            <p className="font-mono text-lg font-bold text-danger">
               {data.fichasNaoConformes} <span className="text-xs font-normal text-muted-foreground">não conf.</span>
             </p>
           </Card>
-          <MetricCard icon={ClipboardList} label="Total de Coletas" value={data.totalColetas} tone="warning" />
+          <MetricCard icon={ClipboardList} label="Total de Coletas" value={data.totalColetas} tone="neutral" />
         </div>
       )}
 
