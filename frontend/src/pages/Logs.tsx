@@ -1,28 +1,46 @@
 import { useState, useEffect } from 'react'
-import { Loader2 } from 'lucide-react'
 import { api, type AuditLog } from '../services/api'
 import Pagination from '../components/Pagination'
 import Toast from '../components/Toast'
+import {
+  Button, Select, PageHeader, Badge, type Tone,
+  LoadingState, EmptyState, Table, Thead, Tr, Td,
+} from '../components/ui'
 
-const ACAO_COLOR: Record<string, string> = {
-  CRIAR: 'bg-emerald-500/15 text-emerald-400',
-  EDITAR: 'bg-blue-500/15 text-blue-400',
-  EXCLUIR: 'bg-red-500/15 text-red-400',
+const ACAO_TONE: Record<string, Tone> = {
+  CRIAR: 'success',
+  EDITAR: 'info',
+  EXCLUIR: 'danger',
 }
 
-const ENTIDADE_COLOR: Record<string, string> = {
-  ANALISE: 'bg-teal-500/15 text-teal-400',
-  FICHA: 'bg-purple-500/15 text-purple-400',
-  COLETA: 'bg-amber-500/15 text-amber-400',
-  LOTE: 'bg-sky-500/15 text-sky-400',
+const ENTIDADE_TONE: Record<string, Tone> = {
+  ANALISE: 'accent',
+  FICHA: 'primary',
+  COLETA: 'warning',
+  LOTE: 'info',
 }
 
-function Badge({ label, colorCls }: { label: string; colorCls: string }) {
-  return (
-    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${colorCls}`}>
-      {label}
-    </span>
-  )
+const DETALHE_LABEL: Record<string, string> = {
+  codigo: 'Código',
+  fornecedor: 'Fornecedor',
+  status: 'Status',
+  destino: 'Destino',
+  ticket: 'Ticket',
+  nomeProdutor: 'Produtor',
+}
+
+function formatDetalhes(detalhes: string | null | undefined): string {
+  if (!detalhes) return '—'
+  try {
+    const obj = JSON.parse(detalhes) as Record<string, unknown>
+    const pairs = Object.entries(obj).filter(([, v]) => v != null && v !== '')
+    if (pairs.length === 0) return '—'
+    return pairs
+      .map(([k, v]) => `${DETALHE_LABEL[k] ?? k}: ${v}`)
+      .join(' · ')
+  } catch {
+    return detalhes
+  }
 }
 
 export default function Logs() {
@@ -63,93 +81,57 @@ export default function Logs() {
     <div>
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div className="mb-6">
-        <h1 className="font-serif text-2xl font-semibold text-zinc-100">Logs de Auditoria</h1>
-        <p className="mt-1 text-sm text-zinc-500">Histórico de todas as operações realizadas no sistema</p>
-      </div>
+      <PageHeader title="Logs de Auditoria" description="Histórico de todas as operações realizadas no sistema" />
 
       {/* Filtros */}
-      <div className="mb-5 flex flex-wrap gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-        <select
-          value={filters.entidade}
-          onChange={(e) => setFilters((f) => ({ ...f, entidade: e.target.value }))}
-          className="rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
-        >
+      <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-muted/40 p-4">
+        <Select value={filters.entidade} onChange={(e) => setFilters((f) => ({ ...f, entidade: e.target.value }))} className="w-auto">
           <option value="">Todas as entidades</option>
           <option value="ANALISE">Análise</option>
           <option value="FICHA">Ficha</option>
           <option value="COLETA">Coleta</option>
           <option value="LOTE">Lote</option>
-        </select>
-        <select
-          value={filters.acao}
-          onChange={(e) => setFilters((f) => ({ ...f, acao: e.target.value }))}
-          className="rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
-        >
+        </Select>
+        <Select value={filters.acao} onChange={(e) => setFilters((f) => ({ ...f, acao: e.target.value }))} className="w-auto">
           <option value="">Todas as ações</option>
           <option value="CRIAR">Criar</option>
           <option value="EDITAR">Editar</option>
           <option value="EXCLUIR">Excluir</option>
-        </select>
-        <button
-          onClick={handleFilter}
-          className="rounded-xl bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-600"
-        >
-          Filtrar
-        </button>
-        <span className="ml-auto self-center text-xs text-zinc-500">{total} registro(s)</span>
+        </Select>
+        <Button variant="secondary" onClick={handleFilter}>Filtrar</Button>
+        <span className="ml-auto self-center text-xs text-muted-foreground">{total} registro(s)</span>
       </div>
 
       {/* Tabela */}
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 size={28} className="animate-spin text-emerald-500" />
-        </div>
+        <LoadingState />
+      ) : logs.length === 0 ? (
+        <EmptyState message="Nenhum log encontrado" />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-xl border border-zinc-700/60 shadow-lg">
-            <table className="w-full min-w-[700px]">
-              <thead>
-                <tr>
-                  {['Data', 'Usuário', 'Ação', 'Entidade', 'ID', 'Detalhes'].map((h) => (
-                    <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {logs.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-10 text-center text-sm text-zinc-600">
-                      Nenhum log encontrado
-                    </td>
-                  </tr>
-                ) : logs.map((l) => (
-                  <tr key={l.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500 whitespace-nowrap">
-                      {new Date(l.createdAt).toLocaleString('pt-BR')}
-                    </td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">
-                      {l.userEmail}
-                    </td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center">
-                      <Badge label={l.acao} colorCls={ACAO_COLOR[l.acao] ?? 'bg-zinc-700/30 text-zinc-400'} />
-                    </td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center">
-                      <Badge label={l.entidade} colorCls={ENTIDADE_COLOR[l.entidade] ?? 'bg-zinc-700/30 text-zinc-400'} />
-                    </td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center font-mono text-xs text-zinc-400">
-                      #{l.entidadeId}
-                    </td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-left text-xs text-zinc-500 font-mono max-w-[260px] truncate">
-                      {l.detalhes ?? '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table minWidth="min-w-[700px]">
+            <Thead headers={['Data', 'Usuário', 'Ação', 'Entidade', 'ID', 'Detalhes']} />
+            <tbody>
+              {logs.map((l) => (
+                <Tr key={l.id}>
+                  <Td className="text-xs text-muted-foreground whitespace-nowrap">
+                    {new Date(l.createdAt).toLocaleString('pt-BR')}
+                  </Td>
+                  <Td>{l.userEmail}</Td>
+                  <Td>
+                    <Badge tone={ACAO_TONE[l.acao] ?? 'neutral'}>{l.acao}</Badge>
+                  </Td>
+                  <Td>
+                    <Badge tone={ENTIDADE_TONE[l.entidade] ?? 'neutral'}>{l.entidade}</Badge>
+                  </Td>
+                  <Td className="font-mono text-xs text-muted-foreground">#{l.entidadeId}</Td>
+                  <Td align="left" className="text-xs text-muted-foreground max-w-[260px] truncate" title={formatDetalhes(l.detalhes)}>
+                    {formatDetalhes(l.detalhes)}
+                  </Td>
+                </Tr>
+              ))}
+            </tbody>
+          </Table>
 
           <Pagination
             page={pagina}

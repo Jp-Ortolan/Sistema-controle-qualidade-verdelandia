@@ -1,9 +1,13 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import { Plus, X, Loader2, Search, Pencil, Trash2, Copy, FileSpreadsheet, FileText } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Copy, FileSpreadsheet, FileText } from 'lucide-react'
 import { api, type Analise, type Lote } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 import Pagination from '../components/Pagination'
 import Toast from '../components/Toast'
+import {
+  Button, Field, Input, Select, Textarea, Modal, PageHeader, Badge,
+  LoadingState, EmptyState, Table, Thead, Tr, Td,
+} from '../components/ui'
 
 type ToastT = { msg: string; type: 'ok' | 'err' | 'info' | 'warn' }
 
@@ -40,9 +44,6 @@ const PRODUTO_LABEL: Record<string, string> = {
   MENTA_LIMAO: 'Menta & Limão',
   LIMAO: 'Limão',
 }
-
-const inputCls = 'w-full rounded-xl border border-zinc-700 bg-zinc-800/60 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
-const selectCls = 'w-full rounded-xl border border-zinc-700 bg-zinc-800/60 px-4 py-2.5 text-sm text-zinc-200 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
 
 export default function Analises() {
   const perfil = getPerfil()
@@ -214,9 +215,6 @@ export default function Analises() {
   const previewDesconto = !isNaN(pct) ? descontoLabel(pct) + '%' : '—'
   const showActions = canWrite || canDel || canExport
 
-  const canExportExcel = canExport
-  const canExportPdf   = canExport
-
   async function handleExport(tipo: 'excel' | 'pdf') {
     if (analises.length === 0) {
       setToast({ msg: 'Nenhum registro encontrado para exportar.', type: 'warn' })
@@ -250,321 +248,228 @@ export default function Analises() {
     <div>
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-serif text-2xl font-semibold text-zinc-100">Análises de Erva-Mate</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          {canExportPdf && (
-            <button
-              onClick={() => handleExport('pdf')}
-              className="flex items-center gap-2 rounded-xl border border-red-600/30 bg-red-600/10 px-3 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-600/20"
-            >
-              <FileText size={15} /> Exportar PDF
-            </button>
-          )}
-          {canExportExcel && (
-            <button
-              onClick={() => handleExport('excel')}
-              className="flex items-center gap-2 rounded-xl border border-emerald-600/30 bg-emerald-600/10 px-3 py-2 text-sm font-semibold text-emerald-400 transition hover:bg-emerald-600/20"
-            >
-              <FileSpreadsheet size={15} /> Exportar Excel
-            </button>
-          )}
-          {canWrite && (
-            <button
-              onClick={openCreate}
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500"
-            >
-              <Plus size={16} /> Nova Análise
-            </button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="Análises de Erva-Mate"
+        actions={
+          <>
+            {canExport && (
+              <Button variant="outline" className="border-danger/30 bg-danger/10 text-danger hover:bg-danger/20" onClick={() => handleExport('pdf')}>
+                <FileText size={15} /> Exportar PDF
+              </Button>
+            )}
+            {canExport && (
+              <Button variant="outline" className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20" onClick={() => handleExport('excel')}>
+                <FileSpreadsheet size={15} /> Exportar Excel
+              </Button>
+            )}
+            {canWrite && (
+              <Button onClick={openCreate}>
+                <Plus size={16} /> Nova Análise
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {/* Filtros */}
-      <div className="mb-5 flex flex-wrap gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-        <input
+      <div className="mb-5 flex flex-wrap gap-3 rounded-xl border border-border bg-muted/40 p-4">
+        <Input
           value={filters.nomeProdutor}
           onChange={(e) => setFilters((f) => ({ ...f, nomeProdutor: e.target.value }))}
           placeholder="Buscar por produtor..."
-          className="min-w-[180px] flex-1 rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-emerald-500"
+          className="min-w-[180px] flex-1"
         />
-        <input
+        <Input
           type="date"
-          placeholder="dd/mm/aaaa"
           value={filters.dataInicio}
           onChange={(e) => setFilters((f) => ({ ...f, dataInicio: e.target.value }))}
-          className="flex-1 min-w-[120px] rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
+          className="flex-1 min-w-[120px]"
         />
-        <input
+        <Input
           type="date"
-          placeholder="dd/mm/aaaa"
           value={filters.dataFim}
           onChange={(e) => setFilters((f) => ({ ...f, dataFim: e.target.value }))}
-          className="flex-1 min-w-[120px] rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
+          className="flex-1 min-w-[120px]"
         />
-        <button
-          onClick={() => { setPage(1); load(1) }}
-          className="flex items-center gap-2 rounded-xl bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-600"
-        >
+        <Button variant="secondary" onClick={() => { setPage(1); load(1) }}>
           <Search size={15} /> Filtrar
-        </button>
+        </Button>
       </div>
 
-      {/* Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm">
-          <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-3 min-[480px]:px-6 min-[480px]:py-4">
-              <h2 className="text-base font-bold text-zinc-100">{editingItem ? 'Editar Análise' : 'Nova Análise'}</h2>
-              <button onClick={() => setShowForm(false)} className="text-zinc-500 hover:text-zinc-300"><X size={18} /></button>
-            </div>
+      <Modal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title={editingItem ? 'Editar Análise' : 'Nova Análise'}
+        maxWidth="max-w-lg"
+        footer={
+          <>
+            <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1">
+              Cancelar
+            </Button>
+            <Button form="analise-form" type="submit" loading={saving} className="flex-1">
+              {!saving && (editingItem ? 'Atualizar' : 'Registrar')}
+            </Button>
+          </>
+        }
+      >
+        <form id="analise-form" onSubmit={handleSubmit} className="space-y-4">
+          <Field label="Ticket" required error={errors.ticket}>
+            <Input
+              value={form.ticket}
+              onChange={(e) => setForm((f) => ({ ...f, ticket: e.target.value }))}
+              placeholder="Ex: 1234"
+            />
+          </Field>
 
-            <div className="flex-1 overflow-y-auto px-3 py-4 min-[480px]:px-6 min-[480px]:py-5">
-              <form id="analise-form" onSubmit={handleSubmit} className="space-y-4">
+          <Field label="Produtor (opcional)" error={errors.nomeProdutor}>
+            <Input
+              value={form.nomeProdutor}
+              onChange={(e) => setForm((f) => ({ ...f, nomeProdutor: e.target.value }))}
+              placeholder="Ex: João Silva"
+            />
+          </Field>
 
-                {/* Ticket */}
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-zinc-400">
-                    Ticket<span className="ml-0.5 text-red-400">*</span>
-                  </label>
-                  <input
-                    value={form.ticket}
-                    onChange={(e) => setForm((f) => ({ ...f, ticket: e.target.value }))}
-                    placeholder="Ex: 1234"
-                    className={inputCls}
-                  />
-                  {errors.ticket && <p className="mt-1 text-xs text-red-400">{errors.ticket}</p>}
-                </div>
+          <Field label="Lote">
+            <Select value={form.loteId} onChange={(e) => setForm((f) => ({ ...f, loteId: e.target.value }))}>
+              <option value="">Nenhum</option>
+              {lotes.map((l) => (
+                <option key={l.id} value={l.id}>{l.codigo} — {PRODUTO_LABEL[l.produto] ?? l.produto}</option>
+              ))}
+            </Select>
+          </Field>
 
-                {/* Nome do Produtor */}
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-zinc-400">Produtor (opcional)</label>
-                  <input
-                    value={form.nomeProdutor}
-                    onChange={(e) => setForm((f) => ({ ...f, nomeProdutor: e.target.value }))}
-                    placeholder="Ex: João Silva"
-                    className={inputCls}
-                  />
-                  {errors.nomeProdutor && <p className="mt-1 text-xs text-red-400">{errors.nomeProdutor}</p>}
-                </div>
+          <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2">
+            <Field label="Data da Análise" required error={errors.dataAnalise}>
+              <Input
+                type="date"
+                value={form.dataAnalise}
+                onChange={(e) => setForm((f) => ({ ...f, dataAnalise: e.target.value }))}
+              />
+            </Field>
+            <Field label="Data de Fabricação">
+              <Input
+                type="date"
+                value={form.dataFabricacao}
+                onChange={(e) => setForm((f) => ({ ...f, dataFabricacao: e.target.value }))}
+              />
+            </Field>
+          </div>
 
-                {/* Lote */}
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-zinc-400">Lote</label>
-                  <select
-                    value={form.loteId}
-                    onChange={(e) => setForm((f) => ({ ...f, loteId: e.target.value }))}
-                    className={selectCls}
-                  >
-                    <option value="">Nenhum</option>
-                    {lotes.map((l) => (
-                      <option key={l.id} value={l.id}>{l.codigo} — {PRODUTO_LABEL[l.produto] ?? l.produto}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Datas */}
-                <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-400">
-                      Data da Análise<span className="ml-0.5 text-red-400">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      placeholder="dd/mm/aaaa"
-                      value={form.dataAnalise}
-                      onChange={(e) => setForm((f) => ({ ...f, dataAnalise: e.target.value }))}
-                      className={inputCls}
-                    />
-                    {errors.dataAnalise && <p className="mt-1 text-xs text-red-400">{errors.dataAnalise}</p>}
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-400">Data de Fabricação</label>
-                    <input
-                      type="date"
-                      placeholder="dd/mm/aaaa"
-                      value={form.dataFabricacao}
-                      onChange={(e) => setForm((f) => ({ ...f, dataFabricacao: e.target.value }))}
-                      className={inputCls}
-                    />
-                  </div>
-                </div>
-
-                {/* Campos numéricos */}
-                <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-400">
-                      Teor de Palito (Erva-Mate) %<span className="ml-0.5 text-red-400">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={form.percentualPalito}
-                      onChange={(e) => setForm((f) => ({ ...f, percentualPalito: e.target.value }))}
-                      placeholder="Ex: 8.5"
-                      className={inputCls}
-                    />
-                    {errors.percentualPalito && <p className="mt-1 text-xs text-red-400">{errors.percentualPalito}</p>}
-                  </div>
-                  <div className="flex flex-col justify-end">
-                    <div className="rounded-xl border border-zinc-700 bg-zinc-800/40 px-3 py-2.5">
-                      <p className="text-[10px] text-zinc-500">Desconto calculado</p>
-                      <p className="mt-0.5 text-lg font-bold text-emerald-400">{previewDesconto}</p>
-                      <p className="text-[9px] text-zinc-600">Palito até 0,3%: sem desconto. Acima de 0,3%: desconto = (palito − 0,3) × 35%</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-400">Teor de Pó %</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={form.teorPo}
-                      onChange={(e) => setForm((f) => ({ ...f, teorPo: e.target.value }))}
-                      placeholder="Opcional"
-                      className={inputCls}
-                    />
-                    {errors.teorPo && <p className="mt-1 text-xs text-red-400">{errors.teorPo}</p>}
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-400">Umidade %</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={form.umidade}
-                      onChange={(e) => setForm((f) => ({ ...f, umidade: e.target.value }))}
-                      placeholder="Opcional"
-                      className={inputCls}
-                    />
-                    {errors.umidade && <p className="mt-1 text-xs text-red-400">{errors.umidade}</p>}
-                  </div>
-                </div>
-
-                {/* Observação */}
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-zinc-400">Observação</label>
-                  <textarea
-                    rows={2}
-                    value={form.observacao}
-                    onChange={(e) => setForm((f) => ({ ...f, observacao: e.target.value }))}
-                    placeholder="Observações opcionais..."
-                    className={inputCls}
-                  />
-                  {errors.observacao && <p className="mt-1 text-xs text-red-400">{errors.observacao}</p>}
-                </div>
-              </form>
-            </div>
-
-            <div className="flex flex-col-reverse gap-3 border-t border-zinc-800 px-3 py-3 min-[380px]:flex-row min-[480px]:px-6 min-[480px]:py-4">
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="flex-1 rounded-xl border border-zinc-700 py-2.5 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800"
-              >
-                Cancelar
-              </button>
-              <button
-                form="analise-form"
-                type="submit"
-                disabled={saving}
-                className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
-              >
-                {saving ? <Loader2 size={16} className="mx-auto animate-spin" /> : editingItem ? 'Atualizar' : 'Registrar'}
-              </button>
+          <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2">
+            <Field label="Teor de Palito (Erva-Mate) %" required error={errors.percentualPalito}>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={form.percentualPalito}
+                onChange={(e) => setForm((f) => ({ ...f, percentualPalito: e.target.value }))}
+                placeholder="Ex: 8.5"
+              />
+            </Field>
+            <div className="flex flex-col justify-end">
+              <div className="rounded-xl border border-border bg-muted/60 px-3 py-2.5">
+                <p className="text-[10px] text-muted-foreground">Desconto calculado</p>
+                <p className="mt-0.5 text-lg font-bold text-primary">{previewDesconto}</p>
+                <p className="text-[9px] text-muted-foreground">Palito até 0,3%: sem desconto. Acima de 0,3%: desconto = (palito − 0,3) × 35%</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2">
+            <Field label="Teor de Pó %" error={errors.teorPo}>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={form.teorPo}
+                onChange={(e) => setForm((f) => ({ ...f, teorPo: e.target.value }))}
+                placeholder="Opcional"
+              />
+            </Field>
+            <Field label="Umidade %" error={errors.umidade}>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={form.umidade}
+                onChange={(e) => setForm((f) => ({ ...f, umidade: e.target.value }))}
+                placeholder="Opcional"
+              />
+            </Field>
+          </div>
+
+          <Field label="Observação" error={errors.observacao}>
+            <Textarea
+              rows={2}
+              value={form.observacao}
+              onChange={(e) => setForm((f) => ({ ...f, observacao: e.target.value }))}
+              placeholder="Observações opcionais..."
+            />
+          </Field>
+        </form>
+      </Modal>
 
       {/* Tabela */}
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-emerald-500" /></div>
+        <LoadingState />
+      ) : analises.length === 0 ? (
+        <EmptyState message="Nenhuma análise encontrada" />
       ) : (
         <div>
-          <div className="overflow-x-auto rounded-xl border border-zinc-700/60 shadow-lg">
-            <table className="w-full min-w-[820px]">
-              <thead>
-                <tr>
-                  {[
-                    'Ticket', 'Produtor', 'Lote', 'Palito % (Erva)', 'Teor Pó %', 'Umidade %', 'Desconto', 'Data',
-                    ...(showActions ? ['Ações'] : []),
-                  ].map((h) => (
-                    <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {analises.length === 0 ? (
-                  <tr>
-                    <td colSpan={showActions ? 9 : 8} className="py-10 text-center text-sm text-zinc-600">
-                      Nenhuma análise encontrada
-                    </td>
-                  </tr>
-                ) : analises.map((a) => (
-                  <tr key={a.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center font-mono text-sm text-emerald-400">
-                      {a.ticket ?? <span className="text-zinc-600">—</span>}
-                    </td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">{a.nomeProdutor}</td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-400">
-                      {a.lote ? a.lote.codigo : <span className="text-zinc-600">—</span>}
-                    </td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{a.percentualPalito}%</td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">
-                      {a.teorPo != null ? `${a.teorPo}%` : <span className="text-zinc-600">—</span>}
-                    </td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">
-                      {a.umidade != null ? `${a.umidade}%` : <span className="text-zinc-600">—</span>}
-                    </td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center">
-                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${a.desconto === 0 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>
-                        {a.desconto}%
-                      </span>
-                    </td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">
-                      {formatDate(a.dataAnalise)}
-                    </td>
-                    {showActions && (
-                      <td className="border-t border-zinc-800 px-4 py-2 text-center">
-                        {confirmId === a.id ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <button onClick={() => handleDelete(a.id)} className="text-xs font-semibold text-red-400 hover:text-red-300">Confirmar</button>
-                            <button onClick={() => setConfirmId(null)} className="text-xs text-zinc-500 hover:text-zinc-300">Cancelar</button>
-                          </span>
-                        ) : (
-                          <span className="flex items-center justify-center gap-2">
-                            {canExport && (
-                              <button onClick={() => handleCopy(a)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-blue-400" title="Copiar">
-                                <Copy size={14} />
-                              </button>
-                            )}
-                            {canWrite && (
-                              <button onClick={() => openEdit(a)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-emerald-400" title="Editar">
-                                <Pencil size={14} />
-                              </button>
-                            )}
-                            {canDel && (
-                              <button onClick={() => setConfirmId(a.id)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-red-400" title="Excluir">
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </span>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table minWidth="min-w-[820px]">
+            <Thead headers={['Ticket', 'Produtor', 'Lote', 'Palito % (Erva)', 'Teor Pó %', 'Umidade %', 'Desconto', 'Data', ...(showActions ? ['Ações'] : [])]} />
+            <tbody>
+              {analises.map((a) => (
+                <Tr key={a.id}>
+                  <Td className="font-mono text-primary">
+                    {a.ticket ?? <span className="text-muted-foreground/60">—</span>}
+                  </Td>
+                  <Td className="font-medium">{a.nomeProdutor}</Td>
+                  <Td className="text-muted-foreground">
+                    {a.lote ? a.lote.codigo : <span className="text-muted-foreground/60">—</span>}
+                  </Td>
+                  <Td>{a.percentualPalito}%</Td>
+                  <Td>{a.teorPo != null ? `${a.teorPo}%` : <span className="text-muted-foreground/60">—</span>}</Td>
+                  <Td>{a.umidade != null ? `${a.umidade}%` : <span className="text-muted-foreground/60">—</span>}</Td>
+                  <Td>
+                    <Badge tone={a.desconto === 0 ? 'success' : 'warning'}>{a.desconto}%</Badge>
+                  </Td>
+                  <Td className="text-xs text-muted-foreground">{formatDate(a.dataAnalise)}</Td>
+                  {showActions && (
+                    <Td>
+                      {confirmId === a.id ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <button onClick={() => handleDelete(a.id)} className="text-xs font-semibold text-danger hover:brightness-110">Confirmar</button>
+                          <button onClick={() => setConfirmId(null)} className="text-xs text-muted-foreground hover:text-foreground">Cancelar</button>
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center gap-2">
+                          {canExport && (
+                            <button onClick={() => handleCopy(a)} className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-info" title="Copiar">
+                              <Copy size={14} />
+                            </button>
+                          )}
+                          {canWrite && (
+                            <button onClick={() => openEdit(a)} className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-primary" title="Editar">
+                              <Pencil size={14} />
+                            </button>
+                          )}
+                          {canDel && (
+                            <button onClick={() => setConfirmId(a.id)} className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-danger" title="Excluir">
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </span>
+                      )}
+                    </Td>
+                  )}
+                </Tr>
+              ))}
+            </tbody>
+          </Table>
           <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </div>
       )}

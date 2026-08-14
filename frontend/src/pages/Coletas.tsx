@@ -1,9 +1,13 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import { Plus, X, Loader2, Search, FileSpreadsheet, Pencil, Trash2, Copy } from 'lucide-react'
+import { Plus, Search, FileSpreadsheet, Pencil, Trash2, Copy } from 'lucide-react'
 import { api, type ColetaAmostra } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 import Pagination from '../components/Pagination'
 import Toast from '../components/Toast'
+import {
+  Button, Field, Input, Modal, PageHeader,
+  LoadingState, EmptyState, Table, Thead, Tr, Td,
+} from '../components/ui'
 
 type ToastT = { msg: string; type: 'ok' | 'err' | 'info' | 'warn' }
 
@@ -21,9 +25,6 @@ const EMPTY_FORM = {
 
 type FormState = typeof EMPTY_FORM
 type FormErrors = Partial<Record<keyof FormState, string>>
-
-const inputCls = 'w-full rounded-xl border border-zinc-700 bg-zinc-800/60 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
-const disabledCls = 'w-full rounded-xl border border-zinc-700/50 bg-zinc-800/30 px-4 py-2.5 text-sm text-zinc-500 outline-none cursor-not-allowed'
 
 export default function Coletas() {
   const perfil = getPerfil()
@@ -181,192 +182,136 @@ export default function Coletas() {
     <div>
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-serif text-2xl font-semibold text-zinc-100">Coletas de Amostra</h1>
-        <div className="flex gap-3">
-          {canExport && (
-            <button
-              onClick={handleExportar}
-              disabled={exporting}
-              className="flex items-center gap-2 rounded-xl border border-emerald-700/50 bg-emerald-700/10 px-4 py-2.5 text-sm font-semibold text-emerald-400 transition hover:bg-emerald-700/20 disabled:opacity-50"
-            >
-              {exporting ? <Loader2 size={15} className="animate-spin" /> : <FileSpreadsheet size={15} />}
-              Exportar Excel
-            </button>
-          )}
-          {canWrite && (
-            <button
-              onClick={openCreate}
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500"
-            >
-              <Plus size={16} /> Nova Coleta
-            </button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="Coletas de Amostra"
+        actions={
+          <>
+            {canExport && (
+              <Button variant="outline" onClick={handleExportar} loading={exporting}>
+                {!exporting && <FileSpreadsheet size={15} />} Exportar Excel
+              </Button>
+            )}
+            {canWrite && (
+              <Button onClick={openCreate}>
+                <Plus size={16} /> Nova Coleta
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {/* Filtros */}
-      <div className="mb-5 flex flex-wrap gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-        <input
+      <div className="mb-5 flex flex-wrap gap-3 rounded-xl border border-border bg-muted/40 p-4">
+        <Input
           value={filters.destino}
           onChange={(e) => setFilters((f) => ({ ...f, destino: e.target.value }))}
           placeholder="Destino"
-          className="min-w-[140px] flex-1 rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-emerald-500"
+          className="min-w-[140px] flex-1"
         />
-        <input
+        <Input
           type="date"
           value={filters.dataInicio}
           onChange={(e) => setFilters((f) => ({ ...f, dataInicio: e.target.value }))}
-          className="flex-1 min-w-[120px] rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
+          className="flex-1 min-w-[120px]"
         />
-        <input
+        <Input
           type="date"
           value={filters.dataFim}
           onChange={(e) => setFilters((f) => ({ ...f, dataFim: e.target.value }))}
-          className="flex-1 min-w-[120px] rounded-xl border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500"
+          className="flex-1 min-w-[120px]"
         />
-        <button
-          onClick={() => { setPage(1); load(1) }}
-          className="flex items-center gap-2 rounded-xl bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-600"
-        >
+        <Button variant="secondary" onClick={() => { setPage(1); load(1) }}>
           <Search size={15} /> Filtrar
-        </button>
+        </Button>
       </div>
 
-      {/* Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl max-h-[90vh] overflow-y-auto p-3 min-[480px]:p-6">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-bold text-zinc-100">{editingItem ? 'Editar Coleta' : 'Nova Coleta de Amostra'}</h2>
-              <button onClick={() => setShowForm(false)} className="text-zinc-500 hover:text-zinc-300"><X size={18} /></button>
-            </div>
+      <Modal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title={editingItem ? 'Editar Coleta' : 'Nova Coleta de Amostra'}
+        footer={
+          <>
+            <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1">
+              Cancelar
+            </Button>
+            <Button form="coleta-form" type="submit" loading={saving} className="flex-1">
+              {!saving && (editingItem ? 'Atualizar' : 'Registrar')}
+            </Button>
+          </>
+        }
+      >
+        <form id="coleta-form" onSubmit={handleSubmit} className="space-y-4">
+          <Field label="Data da Coleta" required error={errors.dataColeta}>
+            <Input
+              type="date"
+              max={TODAY}
+              value={form.dataColeta}
+              onChange={(e) => setForm((f) => ({ ...f, dataColeta: e.target.value }))}
+            />
+          </Field>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Data da Coleta */}
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">
-                  Data da Coleta<span className="ml-0.5 text-red-400">*</span>
-                </label>
-                <input
-                  type="date"
-                  max={TODAY}
-                  value={form.dataColeta}
-                  onChange={(e) => setForm((f) => ({ ...f, dataColeta: e.target.value }))}
-                  className={inputCls}
-                />
-                {errors.dataColeta && <p className="mt-1 text-xs text-red-400">{errors.dataColeta}</p>}
-              </div>
+          <Field label="Tipo de Produto">
+            <Input value="Erva-Mate Cancheada" disabled />
+          </Field>
 
-              {/* Tipo de Produto (fixo) */}
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Tipo de Produto</label>
-                <input
-                  value="Erva-Mate Cancheada"
-                  disabled
-                  className={disabledCls}
-                />
-              </div>
+          <Field label="Destino da Amostra" required error={errors.destino}>
+            <Input
+              value={form.destino}
+              onChange={(e) => setForm((f) => ({ ...f, destino: e.target.value }))}
+              placeholder="Ex: Laboratório Interno"
+            />
+          </Field>
+        </form>
+      </Modal>
 
-              {/* Destino */}
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">
-                  Destino da Amostra<span className="ml-0.5 text-red-400">*</span>
-                </label>
-                <input
-                  value={form.destino}
-                  onChange={(e) => setForm((f) => ({ ...f, destino: e.target.value }))}
-                  placeholder="Ex: Laboratório Interno"
-                  className={inputCls}
-                />
-                {errors.destino && <p className="mt-1 text-xs text-red-400">{errors.destino}</p>}
-              </div>
-
-              <div className="flex flex-col-reverse gap-3 pt-2 min-[380px]:flex-row">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 rounded-xl border border-zinc-700 py-2.5 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
-                >
-                  {saving ? <Loader2 size={16} className="mx-auto animate-spin" /> : editingItem ? 'Atualizar' : 'Registrar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Tabela */}
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-emerald-500" /></div>
+        <LoadingState />
+      ) : coletas.length === 0 ? (
+        <EmptyState message="Nenhuma coleta encontrada" />
       ) : (
         <div>
-          <div className="overflow-x-auto rounded-xl border border-zinc-700/60 shadow-lg">
-            <table className="w-full min-w-[640px]">
-              <thead>
-                <tr>
-                  {[
-                    '#', 'Tipo Produto', 'Destino', 'Data Coleta', 'Cadastro',
-                    ...(showActions ? ['Ações'] : []),
-                  ].map((h) => (
-                    <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {coletas.length === 0 ? (
-                  <tr>
-                    <td colSpan={showActions ? 6 : 5} className="py-10 text-center text-sm text-zinc-600">
-                      Nenhuma coleta encontrada
-                    </td>
-                  </tr>
-                ) : coletas.map((c) => (
-                  <tr key={c.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">{c.id}</td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">{c.tipoProduto}</td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{c.destino}</td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{formatDate(c.dataColeta)}</td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">{new Date(c.createdAt).toLocaleDateString('pt-BR')}</td>
-                    {showActions && (
-                      <td className="border-t border-zinc-800 px-4 py-2 text-center">
-                        {confirmId === c.id ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <button onClick={() => handleDelete(c.id)} className="text-xs font-semibold text-red-400 hover:text-red-300">Confirmar</button>
-                            <button onClick={() => setConfirmId(null)} className="text-xs text-zinc-500 hover:text-zinc-300">Cancelar</button>
-                          </span>
-                        ) : (
-                          <span className="flex items-center justify-center gap-2">
-                            {canExport && (
-                              <button onClick={() => handleCopy(c)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-blue-400" title="Copiar">
-                                <Copy size={14} />
-                              </button>
-                            )}
-                            {canWrite && (
-                              <button onClick={() => openEdit(c)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-emerald-400" title="Editar">
-                                <Pencil size={14} />
-                              </button>
-                            )}
-                            {canDel && (
-                              <button onClick={() => setConfirmId(c.id)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-red-400" title="Excluir">
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </span>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table minWidth="min-w-[640px]">
+            <Thead headers={['#', 'Tipo Produto', 'Destino', 'Data Coleta', 'Cadastro', ...(showActions ? ['Ações'] : [])]} />
+            <tbody>
+              {coletas.map((c) => (
+                <Tr key={c.id}>
+                  <Td className="text-xs text-muted-foreground">{c.id}</Td>
+                  <Td className="font-medium">{c.tipoProduto}</Td>
+                  <Td>{c.destino}</Td>
+                  <Td>{formatDate(c.dataColeta)}</Td>
+                  <Td className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleDateString('pt-BR')}</Td>
+                  {showActions && (
+                    <Td>
+                      {confirmId === c.id ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <button onClick={() => handleDelete(c.id)} className="text-xs font-semibold text-danger hover:brightness-110">Confirmar</button>
+                          <button onClick={() => setConfirmId(null)} className="text-xs text-muted-foreground hover:text-foreground">Cancelar</button>
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center gap-2">
+                          {canExport && (
+                            <button onClick={() => handleCopy(c)} className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-info" title="Copiar">
+                              <Copy size={14} />
+                            </button>
+                          )}
+                          {canWrite && (
+                            <button onClick={() => openEdit(c)} className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-primary" title="Editar">
+                              <Pencil size={14} />
+                            </button>
+                          )}
+                          {canDel && (
+                            <button onClick={() => setConfirmId(c.id)} className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-danger" title="Excluir">
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </span>
+                      )}
+                    </Td>
+                  )}
+                </Tr>
+              ))}
+            </tbody>
+          </Table>
           <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </div>
       )}

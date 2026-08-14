@@ -1,9 +1,13 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import { Plus, X, Loader2, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { api, type Lote } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 import Pagination from '../components/Pagination'
 import Toast from '../components/Toast'
+import {
+  Button, Field, Input, Textarea, Modal, PageHeader,
+  LoadingState, EmptyState, Table, Thead, Tr, Td,
+} from '../components/ui'
 
 type ToastT = { msg: string; type: 'ok' | 'err' | 'info' | 'warn' }
 
@@ -145,185 +149,123 @@ export default function Lotes() {
     }
   }
 
-  const inputCls = 'w-full rounded-xl border border-zinc-700 bg-zinc-800/60 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
-  const disabledCls = 'w-full rounded-xl border border-zinc-700/50 bg-zinc-800/30 px-4 py-2.5 text-sm text-zinc-500 outline-none cursor-not-allowed'
-
   const showActions = canWrite || canDel
 
   return (
     <div>
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-serif text-2xl font-semibold text-zinc-100">Lotes de Produção</h1>
-        {canWrite && (
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500"
-          >
+      <PageHeader
+        title="Lotes de Produção"
+        actions={canWrite && (
+          <Button onClick={openCreate}>
             <Plus size={16} /> Novo Lote
-          </button>
+          </Button>
         )}
-      </div>
+      />
 
-      {/* Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl max-h-[90vh] overflow-y-auto p-3 min-[480px]:p-6">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-bold text-zinc-100">{editingItem ? 'Editar Lote' : 'Novo Lote'}</h2>
-              <button onClick={() => setShowForm(false)} className="text-zinc-500 hover:text-zinc-300"><X size={18} /></button>
-            </div>
+      <Modal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title={editingItem ? 'Editar Lote' : 'Novo Lote'}
+        footer={
+          <>
+            <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1">
+              Cancelar
+            </Button>
+            <Button form="lote-form" type="submit" loading={saving} className="flex-1">
+              {!saving && (editingItem ? 'Atualizar' : 'Salvar')}
+            </Button>
+          </>
+        }
+      >
+        <form id="lote-form" onSubmit={handleSubmit} className="space-y-4">
+          <Field label="Código" required error={errors.codigo}>
+            <Input
+              value={form.codigo}
+              onChange={(e) => setForm((f) => ({ ...f, codigo: e.target.value }))}
+              placeholder="Ex: L2026001"
+            />
+          </Field>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Código */}
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">
-                  Código<span className="ml-0.5 text-red-400">*</span>
-                </label>
-                <input
-                  value={form.codigo}
-                  onChange={(e) => setForm((f) => ({ ...f, codigo: e.target.value }))}
-                  placeholder="Ex: L2026001"
-                  className={inputCls}
-                />
-                {errors.codigo && <p className="mt-1 text-xs text-red-400">{errors.codigo}</p>}
-              </div>
+          <Field label="Produto">
+            <Input value="Erva-Mate Cancheada" disabled />
+          </Field>
 
-              {/* Produto (fixo) */}
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Produto</label>
-                <input
-                  value="Erva-Mate Cancheada"
-                  disabled
-                  className={disabledCls}
-                />
-              </div>
-
-              {/* Período */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-zinc-400">
-                    Data de Início<span className="ml-0.5 text-red-400">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={form.dataInicio}
-                    onChange={(e) => handleDataInicioChange(e.target.value)}
-                    className={inputCls}
-                  />
-                  {errors.dataInicio && <p className="mt-1 text-xs text-red-400">{errors.dataInicio}</p>}
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-zinc-400">
-                    Data de Fim<span className="ml-0.5 text-red-400">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={form.dataFim}
-                    onChange={(e) => setForm((f) => ({ ...f, dataFim: e.target.value }))}
-                    className={inputCls}
-                  />
-                  {errors.dataFim && <p className="mt-1 text-xs text-red-400">{errors.dataFim}</p>}
-                </div>
-              </div>
-
-              {/* Observação */}
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Observação</label>
-                <textarea
-                  rows={3}
-                  value={form.observacao}
-                  onChange={(e) => setForm((f) => ({ ...f, observacao: e.target.value }))}
-                  placeholder="Observações opcionais..."
-                  className={inputCls}
-                />
-                {errors.observacao && <p className="mt-1 text-xs text-red-400">{errors.observacao}</p>}
-              </div>
-
-              <div className="flex flex-col-reverse gap-3 pt-2 min-[380px]:flex-row">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 rounded-xl border border-zinc-700 py-2.5 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
-                >
-                  {saving ? <Loader2 size={16} className="mx-auto animate-spin" /> : editingItem ? 'Atualizar' : 'Salvar'}
-                </button>
-              </div>
-            </form>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Data de Início" required error={errors.dataInicio}>
+              <Input
+                type="date"
+                value={form.dataInicio}
+                onChange={(e) => handleDataInicioChange(e.target.value)}
+              />
+            </Field>
+            <Field label="Data de Fim" required error={errors.dataFim}>
+              <Input
+                type="date"
+                value={form.dataFim}
+                onChange={(e) => setForm((f) => ({ ...f, dataFim: e.target.value }))}
+              />
+            </Field>
           </div>
-        </div>
-      )}
+
+          <Field label="Observação" error={errors.observacao}>
+            <Textarea
+              rows={3}
+              value={form.observacao}
+              onChange={(e) => setForm((f) => ({ ...f, observacao: e.target.value }))}
+              placeholder="Observações opcionais..."
+            />
+          </Field>
+        </form>
+      </Modal>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-emerald-500" /></div>
+        <LoadingState />
+      ) : lotes.length === 0 ? (
+        <EmptyState message="Nenhum lote cadastrado" />
       ) : (
         <div>
-          <div className="overflow-x-auto rounded-xl border border-zinc-700/60 shadow-lg">
-            <table className="w-full min-w-[640px]">
-              <thead>
-                <tr>
-                  {['#', 'Código', 'Produto', 'Período', 'Observação', 'Cadastro', ...(showActions ? ['Ações'] : [])].map((h) => (
-                    <th key={h} className="bg-emerald-900/90 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-50">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {lotes.length === 0 ? (
-                  <tr>
-                    <td colSpan={showActions ? 7 : 6} className="py-10 text-center text-sm text-zinc-600">
-                      Nenhum lote cadastrado
-                    </td>
-                  </tr>
-                ) : lotes.map((l) => (
-                  <tr key={l.id} className="even:bg-zinc-900/40 transition hover:bg-zinc-800/40">
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">{l.id}</td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm font-medium text-zinc-200">{l.codigo}</td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">{l.produto}</td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-300">
-                      {formatPeriodo(l.dataInicio, l.dataFim)}
-                    </td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-sm text-zinc-400">
-                      {l.observacao ?? <span className="text-zinc-600">—</span>}
-                    </td>
-                    <td className="border-t border-zinc-800 px-4 py-2.5 text-center text-xs text-zinc-500">
-                      {new Date(l.createdAt).toLocaleDateString('pt-BR')}
-                    </td>
-                    {showActions && (
-                      <td className="border-t border-zinc-800 px-4 py-2 text-center">
-                        {confirmId === l.id ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <button onClick={() => handleDelete(l.id)} className="text-xs font-semibold text-red-400 hover:text-red-300">Confirmar</button>
-                            <button onClick={() => setConfirmId(null)} className="text-xs text-zinc-500 hover:text-zinc-300">Cancelar</button>
-                          </span>
-                        ) : (
-                          <span className="flex items-center justify-center gap-2">
-                            {canWrite && (
-                              <button onClick={() => openEdit(l)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-emerald-400" title="Editar">
-                                <Pencil size={14} />
-                              </button>
-                            )}
-                            {canDel && (
-                              <button onClick={() => setConfirmId(l.id)} className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-700 hover:text-red-400" title="Excluir">
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </span>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table minWidth="min-w-[640px]">
+            <Thead headers={['#', 'Código', 'Produto', 'Período', 'Observação', 'Cadastro', ...(showActions ? ['Ações'] : [])]} />
+            <tbody>
+              {lotes.map((l) => (
+                <Tr key={l.id}>
+                  <Td className="text-xs text-muted-foreground">{l.id}</Td>
+                  <Td className="font-medium">{l.codigo}</Td>
+                  <Td>{l.produto}</Td>
+                  <Td>{formatPeriodo(l.dataInicio, l.dataFim)}</Td>
+                  <Td className="text-muted-foreground">
+                    {l.observacao ?? <span className="text-muted-foreground/60">—</span>}
+                  </Td>
+                  <Td className="text-xs text-muted-foreground">{new Date(l.createdAt).toLocaleDateString('pt-BR')}</Td>
+                  {showActions && (
+                    <Td>
+                      {confirmId === l.id ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <button onClick={() => handleDelete(l.id)} className="text-xs font-semibold text-danger hover:brightness-110">Confirmar</button>
+                          <button onClick={() => setConfirmId(null)} className="text-xs text-muted-foreground hover:text-foreground">Cancelar</button>
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center gap-2">
+                          {canWrite && (
+                            <button onClick={() => openEdit(l)} className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-primary" title="Editar">
+                              <Pencil size={14} />
+                            </button>
+                          )}
+                          {canDel && (
+                            <button onClick={() => setConfirmId(l.id)} className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-danger" title="Excluir">
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </span>
+                      )}
+                    </Td>
+                  )}
+                </Tr>
+              ))}
+            </tbody>
+          </Table>
           <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </div>
       )}

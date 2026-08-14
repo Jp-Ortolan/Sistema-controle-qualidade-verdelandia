@@ -4,76 +4,88 @@
 html, body, #root { height: 100%; margin: 0; padding: 0; }
 
 /* ═══════════════════════════════════════════════
-   CSS Custom Properties
-   :root        → tema claro (padrão)
-   body.dark-theme → tema escuro
+   SCQ Design System — Tokens semânticos
+   Gera utilities Tailwind automaticamente:
+   bg-primary, text-foreground, border-border, bg-success/10 etc.
+   Valores claros abaixo; overrides de dark em body.dark-theme (mais abaixo).
 ═══════════════════════════════════════════════ */
+@theme {
+  --color-background:          #f5f6f4;
+  --color-surface:              #ffffff;
+  --color-surface-elevated:     #ffffff;
+  --color-foreground:           #1a1c1a;
+  --color-muted:                #eef0ed;
+  --color-muted-foreground:     #6b7280;
+  --color-border:               #e1e3df;
 
-:root {
-  /* Semantic tokens – light */
-  --bg-primary:     #f5f5f5;
-  --bg-secondary:   #ffffff;
-  --bg-card:        #ffffff;
-  --bg-header:      rgba(255, 255, 255, 0.97);
-  --bg-sidebar:     #ffffff;
-  --text-primary:   #1a1a1a;
-  --text-secondary: #333333;
-  --text-muted:     #888888;
-  --input-bg:       #ffffff;
-  --input-border:   #cccccc;
-  --border-color:   #e0e0e0;
-  --shadow-card:    0 1px 4px rgba(0,0,0,0.08);
+  --color-primary:              #1f7a4d;
+  --color-primary-foreground:   #ffffff;
+  --color-secondary:            #3f4448;
+  --color-secondary-foreground: #ffffff;
+  --color-accent:               #0d7d72;
+  --color-accent-foreground:    #ffffff;
 
-  /* Zinc scale – inverted para tema claro.
-     Tailwind v4 gera utilities como var(--color-zinc-*),
-     então sobrescrever aqui tematiza tudo automaticamente. */
-  --color-zinc-950: #f5f5f5;   /* bg página */
-  --color-zinc-900: #ffffff;   /* bg card / modal */
-  --color-zinc-800: #e8e8e8;   /* borda sutil / bg input */
-  --color-zinc-700: #cccccc;   /* borda visível */
-  --color-zinc-600: #aaaaaa;   /* texto muito muted */
-  --color-zinc-500: #888888;   /* placeholder / muted */
-  --color-zinc-400: #555555;   /* labels */
-  --color-zinc-300: #444444;   /* texto secundário */
-  --color-zinc-200: #333333;   /* texto médio */
-  --color-zinc-100: #1a1a1a;   /* texto primário */
-  --color-zinc-50:  #111111;   /* texto máximo */
+  --color-success:              #1f7a4d;
+  --color-success-foreground:   #ffffff;
+  --color-warning:              #b45309;
+  --color-warning-foreground:   #ffffff;
+  --color-danger:               #b91c1c;
+  --color-danger-foreground:    #ffffff;
+  --color-info:                 #2563a8;
+  --color-info-foreground:      #ffffff;
+
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 body.dark-theme {
-  /* Semantic tokens – dark */
-  --bg-primary:     #0f1117;
-  --bg-secondary:   #1a1d24;
-  --bg-card:        #1a1d24;
-  --bg-header:      rgba(15, 17, 23, 0.92);
-  --bg-sidebar:     #0f1117;
-  --text-primary:   #e0e0e0;
-  --text-secondary: #a0a0a0;
-  --text-muted:     #6b7280;
-  --input-bg:       #2a2d35;
-  --input-border:   #3a3d45;
-  --border-color:   #2a2d35;
-  --shadow-card:    none;
+  --color-background:          #0f1115;
+  --color-surface:              #171a1f;
+  --color-surface-elevated:     #1d2127;
+  --color-foreground:           #e7e8e6;
+  --color-muted:                #1d2127;
+  --color-muted-foreground:     #9aa0a6;
+  --color-border:               #262a30;
 
-  /* Zinc scale – dark */
-  --color-zinc-950: #0f1117;
-  --color-zinc-900: #1a1d24;
-  --color-zinc-800: #2a2d35;
-  --color-zinc-700: #3a3d45;
-  --color-zinc-600: #52525b;
-  --color-zinc-500: #71717a;
-  --color-zinc-400: #a1a1aa;
-  --color-zinc-300: #c4c4c4;
-  --color-zinc-200: #d0d0d0;
-  --color-zinc-100: #e0e0e0;
-  --color-zinc-50:  #f0f0f0;
+  --color-primary:              #34a373;
+  --color-primary-foreground:   #ffffff;
+  --color-secondary:            #2a2e35;
+  --color-secondary-foreground: #e7e8e6;
+  --color-accent:               #2fa79b;
+  --color-accent-foreground:    #ffffff;
+
+  --color-success:              #34a373;
+  --color-success-foreground:   #ffffff;
+  --color-warning:              #d99a3d;
+  --color-warning-foreground:   #1a1206;
+  --color-danger:               #e5534b;
+  --color-danger-foreground:    #ffffff;
+  --color-info:                 #5b8fd9;
+  --color-info-foreground:      #071b34;
+
+  --shadow-card: none;
+}
+
+/* ═══════════════════════════════════════════════
+   Tokens de superfície translúcida (header/sidebar com
+   backdrop-blur) — não têm equivalente direto no @theme
+   porque usam rgba() para deixar o conteúdo por trás
+   visível. Todo o resto do app usa os tokens semânticos acima.
+═══════════════════════════════════════════════ */
+:root {
+  --bg-header:  rgba(255, 255, 255, 0.97);
+  --bg-sidebar: #ffffff;
+}
+
+body.dark-theme {
+  --bg-header:  rgba(15, 17, 23, 0.92);
+  --bg-sidebar: #0f1117;
 }
 
 /* ══ Base ══ */
 body {
   font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
@@ -86,49 +98,54 @@ body {
 input:not([type="checkbox"]):not([type="radio"]),
 textarea,
 select {
-  background-color: var(--input-bg) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--input-border) !important;
+  background-color: var(--color-surface) !important;
+  color: var(--color-foreground) !important;
+  border-color: var(--color-border) !important;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--text-muted) !important;
+  color: var(--color-muted-foreground) !important;
   opacity: 1;
 }
 
 /* ══ Labels ══ */
 label {
-  color: var(--text-secondary) !important;
+  color: var(--color-muted-foreground) !important;
 }
 
 /* ══ Tabela — células ══ */
 tbody td {
-  color: var(--text-primary);
+  color: var(--color-foreground);
 }
 
-/* Alternância de linhas no tema claro */
-body:not(.dark-theme) tbody tr:nth-child(odd) td  { background-color: #ffffff; }
-body:not(.dark-theme) tbody tr:nth-child(even) td { background-color: #f9f9f9; }
-body:not(.dark-theme) tbody td { border-color: #e8e8e8 !important; }
-
-/* ══ Cards — aplica sombra no tema claro ══ */
-body:not(.dark-theme) .rounded-xl.border,
-body:not(.dark-theme) .rounded-2xl.border {
-  box-shadow: var(--shadow-card);
+/* ══ Login — hero e painel, tema-aware (claro por padrão, escuro em body.dark-theme) ══ */
+.login-hero {
+  background: radial-gradient(ellipse at 30% 40%, #e3f1e8 0%, #f6f8f6 55%, #ffffff 100%);
 }
-
-/* ══ Modais ══ */
-body:not(.dark-theme) [role="dialog"],
-body:not(.dark-theme) .shadow-2xl {
-  background-color: #ffffff;
+body.dark-theme .login-hero {
+  background: radial-gradient(ellipse at 30% 40%, #0f4d2e 0%, #091111 55%, #050607 100%);
+}
+.login-panel-bg {
+  background: radial-gradient(ellipse at 80% 70%, #eaf3ec 0%, #ffffff 60%);
+}
+body.dark-theme .login-panel-bg {
+  background: radial-gradient(ellipse at 80% 70%, #11322f 0%, #050607 60%);
+}
+.login-card {
+  background: rgba(0, 0, 0, 0.015);
+  border-color: var(--color-border);
+}
+body.dark-theme .login-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* ══ Scrollbar ══ */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-secondary); }
-::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+::-webkit-scrollbar-track { background: var(--color-surface); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-muted-foreground); }
 
 /* ══ Date inputs — mobile: sem overflow, sem min-width fixo ══ */
 input[type="date"] {
@@ -139,7 +156,7 @@ input[type="date"] {
 
 input[type="date"]::-webkit-datetime-edit-text { color: inherit; }
 input[type="date"]::-webkit-datetime-edit { padding: 0; }
-input[type="date"]:not([value])::-webkit-datetime-edit { color: var(--text-muted); }
+input[type="date"]:not([value])::-webkit-datetime-edit { color: var(--color-muted-foreground); }
 
 /* ══ Inputs — 16px mínimo no mobile para evitar zoom automático do iOS ══ */
 @media (max-width: 768px) {

@@ -5,6 +5,7 @@ import {
   LogOut, Layers, ScrollText, Sun, Moon,
 } from 'lucide-react'
 import { getPerfil, can } from '../lib/permissions'
+import { getInitialTheme, applyTheme, persistTheme } from '../lib/theme'
 
 const ALL_NAV = [
   { to: '/dashboard', icon: BarChart3,    label: 'Dashboard',            resource: null },
@@ -18,8 +19,8 @@ const ALL_NAV = [
 export default function Layout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
 
-  // isDark = true por padrão (dark-theme aplicado via classe no body)
-  const [isDark, setIsDark] = useState(() => localStorage.getItem('scq_theme') !== 'light')
+  // Usa a preferência salva; na 1ª visita, segue o tema do sistema operacional.
+  const [isDark, setIsDark] = useState(getInitialTheme)
 
   const navigate  = useNavigate()
   const location  = useLocation()
@@ -28,13 +29,13 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   // Aplica/remove a classe .dark-theme no body
   useEffect(() => {
-    document.body.classList.toggle('dark-theme', isDark)
+    applyTheme(isDark)
   }, [isDark])
 
   function toggleTheme() {
     const next = !isDark
     setIsDark(next)
-    localStorage.setItem('scq_theme', next ? 'dark' : 'light')
+    persistTheme(next)
   }
 
   const nav = ALL_NAV.filter((n) => n.resource === null || can.view(n.resource, perfil))
@@ -49,17 +50,17 @@ export default function Layout({ children }: { children: ReactNode }) {
   }
 
   return (
-    /* Wrapper — fundo via CSS var */
-    <div className="min-h-dvh flex flex-col" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="min-h-dvh flex flex-col bg-background">
 
       {/* ── Topbar ── */}
       <header
-        className="sticky top-0 z-40 flex items-center gap-3 border-b px-4 py-2.5 backdrop-blur-md"
-        style={{ backgroundColor: 'var(--bg-header)', borderColor: 'var(--border-color)' }}
+        className="sticky top-0 z-40 flex items-center gap-3 border-b border-border px-4 py-2.5 backdrop-blur-md"
+        style={{ backgroundColor: 'var(--bg-header)' }}
       >
         <button
           onClick={() => setOpen((v) => !v)}
-          className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition"
+          aria-label="Abrir menu"
+          className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition"
         >
           <Menu size={20} />
         </button>
@@ -67,13 +68,13 @@ export default function Layout({ children }: { children: ReactNode }) {
         <img src="/logo_verdelandia.png" alt="Verdelândia" className="h-9 w-auto object-contain" />
 
         <div className="hidden sm:flex flex-col leading-tight">
-          <span className="text-xs font-bold tracking-wide text-zinc-300">SCQ</span>
-          <span className="text-[10px] text-zinc-500">Sistema de Controle de Qualidade</span>
+          <span className="text-xs font-bold tracking-wide text-foreground">SCQ</span>
+          <span className="text-[10px] text-muted-foreground">Sistema de Controle de Qualidade</span>
         </div>
 
-        <div className="mx-3 hidden sm:block h-6 w-px bg-zinc-700" />
+        <div className="mx-3 hidden sm:block h-6 w-px bg-border" />
 
-        <span className="text-sm font-semibold text-zinc-300 hidden sm:block truncate max-w-[200px]">
+        <span className="text-sm font-semibold text-foreground hidden sm:block truncate max-w-[200px]">
           {pageTitle}
         </span>
 
@@ -82,19 +83,19 @@ export default function Layout({ children }: { children: ReactNode }) {
           <button
             onClick={toggleTheme}
             title={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
-            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition"
           >
             {isDark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
           <div className="hidden sm:flex flex-col items-end leading-tight">
-            <span className="text-xs font-medium text-zinc-200">{user.email}</span>
-            <span className="text-[10px] text-zinc-500">{user.perfil}</span>
+            <span className="text-xs font-medium text-foreground">{user.email}</span>
+            <span className="text-[10px] text-muted-foreground">{user.perfil}</span>
           </div>
 
           <button
             onClick={logout}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-600/10 hover:text-rose-300 transition"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/10 transition"
           >
             <LogOut size={14} /> Sair
           </button>
@@ -111,24 +112,22 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       {/* ── Sidebar ── */}
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-full w-68 flex-col border-r shadow-2xl transition-transform duration-300 ${
+        className={`fixed left-0 top-0 z-50 flex h-full w-68 flex-col border-r border-border shadow-2xl transition-transform duration-300 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ backgroundColor: 'var(--bg-sidebar)', borderColor: 'var(--border-color)' }}
+        style={{ backgroundColor: 'var(--bg-sidebar)' }}
       >
         {/* Cabeçalho da sidebar */}
-        <div
-          className="flex items-center gap-3 border-b px-4 py-3"
-          style={{ borderColor: 'var(--border-color)' }}
-        >
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
           <img src="/logo_verdelandia.png" alt="Verdelândia" className="h-9 w-auto object-contain" />
           <div className="min-w-0">
-            <p className="font-serif text-sm font-bold text-zinc-100 truncate">Verdelândia</p>
-            <p className="text-[9px] text-zinc-500 leading-tight">Sistema de Controle de Qualidade</p>
+            <p className="font-serif text-sm font-bold text-foreground truncate">Verdelândia</p>
+            <p className="text-[9px] text-muted-foreground leading-tight">Sistema de Controle de Qualidade</p>
           </div>
           <button
             onClick={() => setOpen(false)}
-            className="ml-auto rounded-lg p-1 text-zinc-500 hover:text-zinc-300 transition"
+            aria-label="Fechar menu"
+            className="ml-auto rounded-lg p-1 text-muted-foreground hover:text-foreground transition"
           >
             <X size={18} />
           </button>
@@ -144,8 +143,8 @@ export default function Layout({ children }: { children: ReactNode }) {
               className={({ isActive }) =>
                 `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition border ${
                   isActive
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-600/40'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 border-transparent'
+                    ? 'bg-primary/10 text-primary border-primary/40'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground border-transparent'
                 }`
               }
             >
@@ -156,18 +155,15 @@ export default function Layout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Rodapé da sidebar */}
-        <div
-          className="border-t px-4 py-3"
-          style={{ borderColor: 'var(--border-color)' }}
-        >
-          <p className="text-[10px] text-zinc-500 mb-0.5 font-medium uppercase tracking-wide">
+        <div className="border-t border-border px-4 py-3">
+          <p className="text-[10px] text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">
             Conectado como
           </p>
-          <p className="text-sm font-semibold text-zinc-200 truncate">{user.email}</p>
-          <p className="text-xs text-emerald-500 font-medium mb-2">{user.perfil}</p>
+          <p className="text-sm font-semibold text-foreground truncate">{user.email}</p>
+          <p className="text-xs text-primary font-medium mb-2">{user.perfil}</p>
           <button
             onClick={logout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm font-semibold text-rose-400 hover:bg-rose-600/10 hover:border-rose-600/30 transition"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-danger hover:bg-danger/10 transition"
           >
             <LogOut size={14} /> Sair do sistema
           </button>
