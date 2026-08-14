@@ -47,7 +47,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="font-serif text-3xl font-semibold text-foreground">Bem-vindo ao SCQ</h1>
+        <h1 className="text-3xl font-semibold text-foreground">Bem-vindo ao SCQ</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Perfil: <span className="font-medium text-primary">{user.perfil}</span>
           {' · '}

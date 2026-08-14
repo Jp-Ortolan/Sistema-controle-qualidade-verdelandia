@@ -23,7 +23,7 @@ export default function Toast({ msg, type, onClose }: Props) {
   }, [onClose, type])
 
   return (
-    <div className={`fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium shadow-xl ${STYLE[type]}`}>
+    <div className={`fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium shadow-md ${STYLE[type]}`}>
       {msg}
       <button onClick={onClose}><X size={14} /></button>
     </div>

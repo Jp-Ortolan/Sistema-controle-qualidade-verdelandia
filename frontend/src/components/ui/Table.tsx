@@ -2,7 +2,7 @@ import type { ReactNode, TdHTMLAttributes } from 'react'
 
 export function Table({ children, minWidth = 'min-w-[560px]' }: { children: ReactNode; minWidth?: string }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-border shadow-lg">
+    <div className="overflow-x-auto rounded-xl border border-border">
       <table className={`w-full ${minWidth}`}>{children}</table>
     </div>
   )
@@ -13,7 +13,7 @@ export function Thead({ headers }: { headers: ReactNode[] }) {
     <thead>
       <tr>
         {headers.map((h, i) => (
-          <th key={i} className="bg-primary px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-primary-foreground">
+          <th key={i} className="border-b-2 border-border bg-muted/60 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {h}
           </th>
         ))}
