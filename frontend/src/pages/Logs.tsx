@@ -114,7 +114,7 @@ export default function Logs() {
             <tbody>
               {logs.map((l) => (
                 <Tr key={l.id}>
-                  <Td className="text-xs text-muted-foreground whitespace-nowrap">
+                  <Td className="font-mono text-xs text-muted-foreground whitespace-nowrap">
                     {new Date(l.createdAt).toLocaleString('pt-BR')}
                   </Td>
                   <Td>{l.userEmail}</Td>

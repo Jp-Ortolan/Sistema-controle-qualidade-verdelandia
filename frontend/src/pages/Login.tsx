@@ -52,22 +52,13 @@ export default function Login() {
 
   return (
     <div className="min-h-dvh flex items-stretch">
-      {/* Painel esquerdo — logo destaque */}
-      <div className="login-hero hidden md:flex flex-col items-center justify-center w-[55%] px-14 py-16 relative overflow-hidden">
-        {/* Noise overlay */}
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E")`,
-          }}
-        />
-
-        <div className="relative z-10 flex flex-col items-center text-center max-w-sm">
-          {/* Logo grande — elemento visual principal */}
+      {/* Painel esquerdo — identidade de marca */}
+      <div className="login-hero hidden md:flex flex-col justify-end w-[55%] px-14 py-16 relative overflow-hidden border-r border-border">
+        <div className="max-w-sm">
           <img
             src="/logo_verdelandia.png"
             alt="Verdelândia"
-            className="h-48 w-auto object-contain drop-shadow-2xl mb-8"
+            className="h-16 w-auto object-contain mb-10"
           />
 
           <h1 className="font-serif text-4xl xl:text-5xl font-semibold text-foreground leading-tight">
@@ -78,24 +69,21 @@ export default function Login() {
             Sistema de Controle de Qualidade para rastreabilidade e análise de erva-mate.
           </p>
 
-          <div className="mt-10 flex gap-10 text-muted-foreground text-sm">
+          <div className="mt-10 flex gap-10 border-t border-border pt-6 text-muted-foreground text-sm">
             <div>
-              <p className="text-xl font-bold text-primary">SCQ</p>
+              <p className="font-mono text-xl font-bold text-primary">SCQ</p>
               <p className="text-xs">Controle de Qualidade</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-primary">FORQSE001</p>
+              <p className="font-mono text-xl font-bold text-primary">FORQSE001</p>
               <p className="text-xs">Fichas de Embalagem</p>
             </div>
           </div>
         </div>
-
-        {/* Brilho de fundo decorativo */}
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-primary/10 to-transparent pointer-events-none" />
       </div>
 
       {/* Painel direito — formulário */}
-      <div className="login-panel-bg flex-1 flex items-center justify-center px-6 py-12">
+      <div className="flex-1 flex items-center justify-center bg-background px-6 py-12">
         <div className="w-full max-w-sm">
           {/* Logo mobile */}
           <div className="md:hidden flex flex-col items-center mb-8 gap-3">
@@ -103,9 +91,8 @@ export default function Login() {
             <span className="font-serif text-lg font-semibold text-foreground">Verdelândia SCQ</span>
           </div>
 
-          <div className="login-card rounded-2xl border p-8 shadow-2xl backdrop-blur-2xl">
-            <div className="mb-1 h-0.5 rounded-full bg-gradient-to-r from-primary/80 via-primary/50 to-accent/70" />
-            <h2 className="mt-6 text-xl font-bold text-foreground">Entrar no sistema</h2>
+          <div className="rounded-xl border border-border bg-surface p-8" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <h2 className="text-xl font-bold text-foreground">Entrar no sistema</h2>
             <p className="mt-1 text-sm text-muted-foreground">Use suas credenciais de acesso</p>
 
             {erro && (

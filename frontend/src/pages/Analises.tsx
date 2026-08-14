@@ -370,7 +370,7 @@ export default function Analises() {
             <div className="flex flex-col justify-end">
               <div className="rounded-xl border border-border bg-muted/60 px-3 py-2.5">
                 <p className="text-[10px] text-muted-foreground">Desconto calculado</p>
-                <p className="mt-0.5 text-lg font-bold text-primary">{previewDesconto}</p>
+                <p className="mt-0.5 font-mono text-lg font-bold text-primary">{previewDesconto}</p>
                 <p className="text-[9px] text-muted-foreground">Palito até 0,3%: sem desconto. Acima de 0,3%: desconto = (palito − 0,3) × 35%</p>
               </div>
             </div>
@@ -428,16 +428,16 @@ export default function Analises() {
                     {a.ticket ?? <span className="text-muted-foreground/60">—</span>}
                   </Td>
                   <Td className="font-medium">{a.nomeProdutor}</Td>
-                  <Td className="text-muted-foreground">
+                  <Td className="font-mono text-muted-foreground">
                     {a.lote ? a.lote.codigo : <span className="text-muted-foreground/60">—</span>}
                   </Td>
-                  <Td>{a.percentualPalito}%</Td>
-                  <Td>{a.teorPo != null ? `${a.teorPo}%` : <span className="text-muted-foreground/60">—</span>}</Td>
-                  <Td>{a.umidade != null ? `${a.umidade}%` : <span className="text-muted-foreground/60">—</span>}</Td>
+                  <Td className="font-mono tabular-nums">{a.percentualPalito}%</Td>
+                  <Td className="font-mono tabular-nums">{a.teorPo != null ? `${a.teorPo}%` : <span className="text-muted-foreground/60">—</span>}</Td>
+                  <Td className="font-mono tabular-nums">{a.umidade != null ? `${a.umidade}%` : <span className="text-muted-foreground/60">—</span>}</Td>
                   <Td>
-                    <Badge tone={a.desconto === 0 ? 'success' : 'warning'}>{a.desconto}%</Badge>
+                    <Badge tone={a.desconto === 0 ? 'success' : 'warning'} className="font-mono">{a.desconto}%</Badge>
                   </Td>
-                  <Td className="text-xs text-muted-foreground">{formatDate(a.dataAnalise)}</Td>
+                  <Td className="font-mono text-xs text-muted-foreground">{formatDate(a.dataAnalise)}</Td>
                   {showActions && (
                     <Td>
                       {confirmId === a.id ? (

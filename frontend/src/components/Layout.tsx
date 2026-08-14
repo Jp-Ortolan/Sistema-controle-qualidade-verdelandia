@@ -53,10 +53,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="min-h-dvh flex flex-col bg-background">
 
       {/* ── Topbar ── */}
-      <header
-        className="sticky top-0 z-40 flex items-center gap-3 border-b border-border px-4 py-2.5 backdrop-blur-md"
-        style={{ backgroundColor: 'var(--bg-header)' }}
-      >
+      <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-border bg-surface px-4 py-2.5">
         <button
           onClick={() => setOpen((v) => !v)}
           aria-label="Abrir menu"
@@ -112,10 +109,9 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       {/* ── Sidebar ── */}
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-full w-68 flex-col border-r border-border shadow-2xl transition-transform duration-300 ${
+        className={`fixed left-0 top-0 z-50 flex h-full w-68 flex-col border-r border-border bg-surface shadow-2xl transition-transform duration-300 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ backgroundColor: 'var(--bg-sidebar)' }}
       >
         {/* Cabeçalho da sidebar */}
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">

@@ -17,7 +17,7 @@ export default function Modal({ open, onClose, title, description, children, foo
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6"
     >
       <div className={`flex max-h-[92vh] w-full ${maxWidth} flex-col rounded-2xl border border-border bg-surface-elevated shadow-2xl`}>
         <div className="flex items-center justify-between border-b border-border px-3 py-3 min-[480px]:px-6 min-[480px]:py-4">

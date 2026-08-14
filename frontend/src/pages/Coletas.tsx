@@ -275,11 +275,11 @@ export default function Coletas() {
             <tbody>
               {coletas.map((c) => (
                 <Tr key={c.id}>
-                  <Td className="text-xs text-muted-foreground">{c.id}</Td>
+                  <Td className="font-mono text-xs text-muted-foreground">{c.id}</Td>
                   <Td className="font-medium">{c.tipoProduto}</Td>
                   <Td>{c.destino}</Td>
-                  <Td>{formatDate(c.dataColeta)}</Td>
-                  <Td className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleDateString('pt-BR')}</Td>
+                  <Td className="font-mono">{formatDate(c.dataColeta)}</Td>
+                  <Td className="font-mono text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleDateString('pt-BR')}</Td>
                   {showActions && (
                     <Td>
                       {confirmId === c.id ? (

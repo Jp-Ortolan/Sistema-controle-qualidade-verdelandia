@@ -344,14 +344,14 @@ export default function Fichas() {
             <tbody>
               {data.fichas.map((f) => (
                 <Tr key={f.id}>
-                  <Td className="text-xs text-muted-foreground">{f.id}</Td>
+                  <Td className="font-mono text-xs text-muted-foreground">{f.id}</Td>
                   <Td>{f.fornecedor}</Td>
                   <Td>
                     <Badge tone={f.statusGlobal === 'CONFORME' ? 'success' : 'danger'}>
                       {f.statusGlobal === 'CONFORME' ? 'Conforme' : 'Não Conforme'}
                     </Badge>
                   </Td>
-                  <Td className="text-xs text-muted-foreground">{new Date(f.createdAt).toLocaleDateString('pt-BR')}</Td>
+                  <Td className="font-mono text-xs text-muted-foreground">{new Date(f.createdAt).toLocaleDateString('pt-BR')}</Td>
                   {canExport && (
                     <Td>
                       <Button

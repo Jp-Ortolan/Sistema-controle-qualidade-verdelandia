@@ -231,14 +231,14 @@ export default function Lotes() {
             <tbody>
               {lotes.map((l) => (
                 <Tr key={l.id}>
-                  <Td className="text-xs text-muted-foreground">{l.id}</Td>
-                  <Td className="font-medium">{l.codigo}</Td>
+                  <Td className="font-mono text-xs text-muted-foreground">{l.id}</Td>
+                  <Td className="font-mono font-medium">{l.codigo}</Td>
                   <Td>{l.produto}</Td>
-                  <Td>{formatPeriodo(l.dataInicio, l.dataFim)}</Td>
+                  <Td className="font-mono">{formatPeriodo(l.dataInicio, l.dataFim)}</Td>
                   <Td className="text-muted-foreground">
                     {l.observacao ?? <span className="text-muted-foreground/60">—</span>}
                   </Td>
-                  <Td className="text-xs text-muted-foreground">{new Date(l.createdAt).toLocaleDateString('pt-BR')}</Td>
+                  <Td className="font-mono text-xs text-muted-foreground">{new Date(l.createdAt).toLocaleDateString('pt-BR')}</Td>
                   {showActions && (
                     <Td>
                       {confirmId === l.id ? (

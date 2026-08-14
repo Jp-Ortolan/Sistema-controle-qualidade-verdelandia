@@ -20,7 +20,7 @@ interface Props {
 
 export default function Badge({ tone = 'neutral', children, className = '' }: Props) {
   return (
-    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${TONE_CLS[tone]} ${className}`}>
+    <span className={`inline-block rounded-sm px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${TONE_CLS[tone]} ${className}`}>
       {children}
     </span>
   )

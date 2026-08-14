@@ -134,11 +134,11 @@ export default function Dashboard() {
                 <Tr key={a.id}>
                   <Td className="font-mono text-xs text-primary">{a.ticket ?? '—'}</Td>
                   <Td className="font-medium">{a.nomeProdutor}</Td>
-                  <Td>{a.percentualPalito}%</Td>
+                  <Td className="font-mono tabular-nums">{a.percentualPalito}%</Td>
                   <Td>
-                    <Badge tone={a.desconto === 0 ? 'success' : 'warning'}>{a.desconto}%</Badge>
+                    <Badge tone={a.desconto === 0 ? 'success' : 'warning'} className="font-mono">{a.desconto}%</Badge>
                   </Td>
-                  <Td className="text-xs text-muted-foreground">{new Date(a.createdAt).toLocaleDateString('pt-BR')}</Td>
+                  <Td className="font-mono text-xs text-muted-foreground">{new Date(a.createdAt).toLocaleDateString('pt-BR')}</Td>
                 </Tr>
               ))}
             </tbody>
