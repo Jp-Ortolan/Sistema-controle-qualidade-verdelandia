@@ -2,9 +2,10 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
-const { requirePerfil } = require('../middleware/perfil');
+const { requirePermissao } = require('../middleware/permissao');
 const { auditLog } = require('../lib/logger');
 const { buildDateRange, LOTE_INCLUDE } = require('../lib/utils');
+const { enviarPlanilha, dataBR, texto } = require('../lib/excel');
 
 const router = express.Router();
 router.use(auth);
@@ -28,14 +29,22 @@ const analiseSchema = z.object({
   observacao: z.string().max(500, 'Observação deve ter no máximo 500 caracteres').optional().nullable(),
 });
 
+// RN01 - Desconto por teor de palito (Industria Ervateira Verdelandia LTDA).
+// O teor de palito e informado em pontos percentuais (ex.: 36 = 36%).
+// Ate 30% nao ha desconto; acima disso desconta-se 35% do excedente.
+// Fonte: planilha RELATORIO FECHAMENTO - abas PALITOS (col. G) e
+// DADOS ENTRADA DE MATERIA PRIMA (col. Q): =SE(palito<=30%;0;(palito-30%)*35%)
+const LIMITE_PALITO = 30;   // % de palito isento de desconto
+const FATOR_DESCONTO = 0.35; // 35% sobre o excedente
+
 function calcularDesconto(pct) {
-  if (pct <= 0.3) return 0;
-  return Math.round((pct - 0.3) * 0.35 * 10000) / 10000;
+  if (pct <= LIMITE_PALITO) return 0;
+  return Math.round((pct - LIMITE_PALITO) * FATOR_DESCONTO * 10000) / 10000;
 }
 
 const INCLUDE = LOTE_INCLUDE;
 
-router.get('/', async (req, res) => {
+router.get('/', requirePermissao('analises', 'view'), async (req, res) => {
   try {
     const { nomeProdutor, dataInicio, dataFim, page = '1', limit = '10' } = req.query;
     const where = {};
@@ -53,7 +62,7 @@ router.get('/', async (req, res) => {
 });
 
 // ── Exportar Excel ─────────────────────────────────────────────────────
-router.get('/exportar/excel', requirePerfil('ANALISTA', 'GESTOR', 'COMPRAS'), async (req, res) => {
+router.get('/exportar/excel', requirePermissao('analises', 'export'), async (req, res) => {
   try {
     const { nomeProdutor, dataInicio, dataFim } = req.query;
     const where = {};
@@ -62,30 +71,48 @@ router.get('/exportar/excel', requirePerfil('ANALISTA', 'GESTOR', 'COMPRAS'), as
     if (dr) where.createdAt = dr;
     const analises = await prisma.analise.findMany({ where, include: INCLUDE, orderBy: { createdAt: 'desc' } });
 
-    const XLSX = require('xlsx');
-    const rows = analises.map((a) => ({
-      'Ticket': a.ticket ?? '—',
-      'Produtor': a.nomeProdutor || '—',
-      'Lote': a.lote?.codigo ?? '—',
-      'Data Análise': a.dataAnalise ? new Date(a.dataAnalise).toLocaleDateString('pt-BR') : '—',
-      'Data Fabricação': a.dataFabricacao ? new Date(a.dataFabricacao).toLocaleDateString('pt-BR') : '—',
-      'Palito (%)': a.percentualPalito,
-      'Pó (%)': a.teorPo ?? '',
-      'Umidade (%)': a.umidade ?? '',
-      'Desconto (%)': a.desconto,
-      'Observação': a.observacao ?? '',
-    }));
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [
-      { wch: 10 }, { wch: 28 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
-      { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 12 }, { wch: 30 },
-    ];
-    XLSX.utils.book_append_sheet(wb, ws, 'Análises');
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=analises.xlsx');
-    return res.send(buffer);
+    const media = (campo) => {
+      const vals = analises.map((a) => a[campo]).filter((v) => typeof v === 'number');
+      if (vals.length === 0) return 0;
+      return Math.round((vals.reduce((s, v) => s + v, 0) / vals.length) * 100) / 100;
+    };
+
+    return enviarPlanilha(res, {
+      titulo: 'Relatório de Análises de Erva-Mate',
+      nomeAba: 'Análises',
+      filtros: [
+        ['Produtor', nomeProdutor],
+        ['Data inicial', dataInicio], ['Data final', dataFim],
+      ],
+      colunas: [
+        { titulo: 'Ticket',            chave: 'ticket',     largura: 12, tipo: 'texto' },
+        { titulo: 'Produtor',          chave: 'produtor',   largura: 30, tipo: 'texto' },
+        { titulo: 'Lote',              chave: 'lote',       largura: 13, tipo: 'texto' },
+        { titulo: 'Data da Análise',   chave: 'dtAnalise',  largura: 16, tipo: 'data' },
+        { titulo: 'Data de Fabricação',chave: 'dtFabric',   largura: 18, tipo: 'data' },
+        { titulo: 'Palito (%)',        chave: 'palito',     largura: 11, tipo: 'percentual' },
+        { titulo: 'Pó (%)',            chave: 'po',         largura: 10, tipo: 'percentual' },
+        { titulo: 'Umidade (%)',       chave: 'umidade',    largura: 12, tipo: 'percentual' },
+        { titulo: 'Desconto (%)',      chave: 'desconto',   largura: 12, tipo: 'percentual' },
+        { titulo: 'Observação',        chave: 'observacao', largura: 38, tipo: 'texto' },
+      ],
+      linhas: analises.map((a) => ({
+        ticket: texto(a.ticket),
+        produtor: texto(a.nomeProdutor),
+        lote: texto(a.lote?.codigo),
+        dtAnalise: dataBR(a.dataAnalise),
+        dtFabric: dataBR(a.dataFabricacao),
+        palito: a.percentualPalito,
+        po: a.teorPo,
+        umidade: a.umidade,
+        desconto: a.desconto,
+        observacao: texto(a.observacao),
+      })),
+      resumo: [
+        ['Teor de palito médio (%)', media('percentualPalito')],
+        ['Desconto médio (%)', media('desconto')],
+      ],
+    }, 'analises-scq.xlsx');
   } catch (err) {
     console.error('[analises/excel]', err?.message);
     return res.status(500).json({ error: 'Erro ao gerar Excel' });
@@ -93,7 +120,7 @@ router.get('/exportar/excel', requirePerfil('ANALISTA', 'GESTOR', 'COMPRAS'), as
 });
 
 // ── Exportar PDF ────────────────────────────────────────────────────────
-router.get('/exportar/pdf', requirePerfil('ANALISTA', 'GESTOR', 'COMPRAS'), async (req, res) => {
+router.get('/exportar/pdf', requirePermissao('analises', 'export'), async (req, res) => {
   try {
     const { nomeProdutor, dataInicio, dataFim } = req.query;
     const where = {};
@@ -179,7 +206,7 @@ router.get('/exportar/pdf', requirePerfil('ANALISTA', 'GESTOR', 'COMPRAS'), asyn
   }
 });
 
-router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
+router.post('/', requirePermissao('analises', 'write'), async (req, res) => {
   try {
     const d = analiseSchema.parse(req.body);
     const analise = await prisma.analise.create({
@@ -205,7 +232,7 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
   }
 });
 
-router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
+router.put('/:id', requirePermissao('analises', 'write'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const d = analiseSchema.parse(req.body);
@@ -234,7 +261,7 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
   }
 });
 
-router.delete('/:id', requirePerfil('ANALISTA'), async (req, res) => {
+router.delete('/:id', requirePermissao('analises', 'delete'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await prisma.analise.delete({ where: { id } });

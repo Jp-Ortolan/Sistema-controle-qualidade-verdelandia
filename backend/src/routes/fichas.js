@@ -2,13 +2,13 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
-const { requirePerfil } = require('../middleware/perfil');
+const { requirePermissao } = require('../middleware/permissao');
 const { auditLog } = require('../lib/logger');
 const { buildDateRange } = require('../lib/utils');
+const { enviarPlanilha, dataBR, texto } = require('../lib/excel');
 
 const router = express.Router();
 router.use(auth);
-router.use(requirePerfil('ANALISTA', 'COMPRAS'));
 
 const paramSchema = z.object({
   resultado: z.string(),
@@ -27,7 +27,70 @@ const fichaSchema = z.object({
   statusGlobal: z.enum(['CONFORME', 'NAO_CONFORME']),
 });
 
-router.get('/', async (req, res) => {
+// Nomes fixos dos 4 parametros da ficha FORQSE001.
+const NOMES_PARAMETROS = ['Densidade', 'Dimensões', 'Visual / Impressões', 'Código de Barras'];
+
+router.get('/exportar', requirePermissao('fichas', 'export'), async (req, res) => {
+  try {
+    const { status, dataInicio, dataFim } = req.query;
+    const where = {};
+    if (status) where.statusGlobal = status;
+    const dr = buildDateRange(dataInicio, dataFim);
+    if (dr) where.createdAt = dr;
+    const fichas = await prisma.fichaEmbalagem.findMany({ where, orderBy: { createdAt: 'desc' } });
+
+    const lerParametros = (json) => {
+      try { return JSON.parse(json); } catch { return []; }
+    };
+    // "0.85 g/cm3 (padrão 0.80-0.90) — Conforme"
+    const descreve = (p) => {
+      if (!p) return null;
+      const un = p.unidade ? ` ${p.unidade}` : '';
+      const padrao = p.padrao ? ` (padrão ${p.padrao}${p.unidadePadrao ? ' ' + p.unidadePadrao : ''})` : '';
+      return `${p.resultado}${un}${padrao} — ${p.conforme ? 'Conforme' : 'Não conforme'}`;
+    };
+
+    const conformes = fichas.filter((f) => f.statusGlobal === 'CONFORME').length;
+
+    return enviarPlanilha(res, {
+      titulo: 'Relatório de Fichas de Liberação de Embalagens (FORQSE001)',
+      nomeAba: 'Fichas',
+      filtros: [['Status', status], ['Data inicial', dataInicio], ['Data final', dataFim]],
+      colunas: [
+        { titulo: 'Nº',                    chave: 'id',        largura: 8,  tipo: 'inteiro' },
+        { titulo: 'Fornecedor',            chave: 'fornecedor',largura: 30, tipo: 'texto' },
+        { titulo: 'Status Global',         chave: 'status',    largura: 16, tipo: 'texto' },
+        { titulo: NOMES_PARAMETROS[0],     chave: 'p1',        largura: 34, tipo: 'texto' },
+        { titulo: NOMES_PARAMETROS[1],     chave: 'p2',        largura: 34, tipo: 'texto' },
+        { titulo: NOMES_PARAMETROS[2],     chave: 'p3',        largura: 34, tipo: 'texto' },
+        { titulo: NOMES_PARAMETROS[3],     chave: 'p4',        largura: 34, tipo: 'texto' },
+        { titulo: 'Observações',           chave: 'obs',       largura: 38, tipo: 'texto' },
+        { titulo: 'Emitida em',            chave: 'criadoEm',  largura: 18, tipo: 'datahora' },
+      ],
+      linhas: fichas.map((f) => {
+        const ps = lerParametros(f.parametros);
+        return {
+          id: f.id,
+          fornecedor: texto(f.fornecedor),
+          status: f.statusGlobal === 'CONFORME' ? 'Conforme' : 'Não conforme',
+          p1: descreve(ps[0]), p2: descreve(ps[1]),
+          p3: descreve(ps[2]), p4: descreve(ps[3]),
+          obs: texto(f.observacoes),
+          criadoEm: dataBR(f.createdAt),
+        };
+      }),
+      resumo: [
+        ['Fichas conformes', conformes],
+        ['Fichas não conformes', fichas.length - conformes],
+      ],
+    }, 'fichas-embalagem-scq.xlsx');
+  } catch (err) {
+    console.error('[fichas/excel]', err?.message);
+    return res.status(500).json({ error: 'Erro ao exportar fichas' });
+  }
+});
+
+router.get('/', requirePermissao('fichas', 'view'), async (req, res) => {
   try {
     const { status, dataInicio, dataFim, pagina = '1', limite = '10' } = req.query;
     const where = {};
@@ -44,7 +107,7 @@ router.get('/', async (req, res) => {
   } catch { return res.status(500).json({ error: 'Erro ao buscar fichas' }); }
 });
 
-router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
+router.post('/', requirePermissao('fichas', 'write'), async (req, res) => {
   try {
     const data = fichaSchema.parse(req.body);
     const ficha = await prisma.fichaEmbalagem.create({
@@ -63,7 +126,7 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
   }
 });
 
-router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
+router.put('/:id', requirePermissao('fichas', 'write'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const data = fichaSchema.parse(req.body);
@@ -85,7 +148,7 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
   }
 });
 
-router.delete('/:id', requirePerfil('ANALISTA'), async (req, res) => {
+router.delete('/:id', requirePermissao('fichas', 'delete'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await prisma.fichaEmbalagem.delete({ where: { id } });
@@ -97,7 +160,7 @@ router.delete('/:id', requirePerfil('ANALISTA'), async (req, res) => {
   }
 });
 
-router.get('/:id/pdf', async (req, res) => {
+router.get('/:id/pdf', requirePermissao('fichas', 'export'), async (req, res) => {
   try {
     const ficha = await prisma.fichaEmbalagem.findUnique({
       where: { id: parseInt(req.params.id) },

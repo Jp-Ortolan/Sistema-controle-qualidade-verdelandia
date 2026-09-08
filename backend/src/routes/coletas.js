@@ -2,14 +2,13 @@ const express = require('express');
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
-const { requirePerfil } = require('../middleware/perfil');
+const { requirePermissao } = require('../middleware/permissao');
 const { auditLog } = require('../lib/logger');
 const { buildDateRange } = require('../lib/utils');
-const XLSX = require('xlsx');
+const { enviarPlanilha, dataBR, texto } = require('../lib/excel');
 
 const router = express.Router();
 router.use(auth);
-router.use(requirePerfil('ANALISTA', 'COMPRAS'));
 
 const coletaSchema = z.object({
   dataColeta: z.string().min(1, 'Data obrigatória'),
@@ -18,28 +17,49 @@ const coletaSchema = z.object({
     .max(100, 'Destino deve ter no máximo 100 caracteres'),
 });
 
-router.get('/exportar', async (_req, res) => {
+router.get('/exportar', requirePermissao('coletas', 'export'), async (req, res) => {
   try {
-    const coletas = await prisma.coletaAmostra.findMany({ orderBy: { dataColeta: 'desc' } });
-    const rows = coletas.map((c) => ({
-      ID: c.id,
-      'Tipo de Produto': c.tipoProduto,
-      Destino: c.destino,
-      'Data da Coleta': new Date(c.dataColeta).toLocaleDateString('pt-BR'),
-      'Data de Cadastro': new Date(c.createdAt).toLocaleDateString('pt-BR'),
-    }));
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{ wch: 6 }, { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 18 }];
-    XLSX.utils.book_append_sheet(wb, ws, 'Coletas');
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=coletas-scq.xlsx');
-    return res.send(buffer);
-  } catch { return res.status(500).json({ error: 'Erro ao exportar coletas' }); }
+    const { destino, dataInicio, dataFim } = req.query;
+    const where = {};
+    if (destino) where.destino = { contains: destino };
+    const dr = buildDateRange(dataInicio, dataFim);
+    if (dr) where.dataColeta = dr;
+    const coletas = await prisma.coletaAmostra.findMany({ where, orderBy: { dataColeta: 'desc' } });
+
+    // Quantas coletas por destino, para o rodape.
+    const porDestino = {};
+    for (const c of coletas) porDestino[c.destino] = (porDestino[c.destino] ?? 0) + 1;
+    const resumo = Object.entries(porDestino)
+      .sort((a, b) => b[1] - a[1])
+      .map(([d, n]) => [`Coletas enviadas para ${d}`, n]);
+
+    return enviarPlanilha(res, {
+      titulo: 'Relatório de Coletas de Amostra',
+      nomeAba: 'Coletas',
+      filtros: [['Destino', destino], ['Data inicial', dataInicio], ['Data final', dataFim]],
+      colunas: [
+        { titulo: 'Nº',                chave: 'id',        largura: 8,  tipo: 'inteiro' },
+        { titulo: 'Tipo de Produto',   chave: 'produto',   largura: 26, tipo: 'texto' },
+        { titulo: 'Destino',           chave: 'destino',   largura: 30, tipo: 'texto' },
+        { titulo: 'Data da Coleta',    chave: 'dtColeta',  largura: 16, tipo: 'data' },
+        { titulo: 'Cadastrado em',     chave: 'dtCadastro',largura: 18, tipo: 'datahora' },
+      ],
+      linhas: coletas.map((c) => ({
+        id: c.id,
+        produto: texto(c.tipoProduto),
+        destino: texto(c.destino),
+        dtColeta: dataBR(c.dataColeta),
+        dtCadastro: dataBR(c.createdAt),
+      })),
+      resumo,
+    }, 'coletas-scq.xlsx');
+  } catch (err) {
+    console.error('[coletas/excel]', err?.message);
+    return res.status(500).json({ error: 'Erro ao exportar coletas' });
+  }
 });
 
-router.get('/', async (req, res) => {
+router.get('/', requirePermissao('coletas', 'view'), async (req, res) => {
   try {
     const { tipoProduto, destino, dataInicio, dataFim, page = '1', limit = '10' } = req.query;
     const where = {};
@@ -57,7 +77,7 @@ router.get('/', async (req, res) => {
   } catch { return res.status(500).json({ error: 'Erro ao buscar coletas' }); }
 });
 
-router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
+router.post('/', requirePermissao('coletas', 'write'), async (req, res) => {
   try {
     const data = coletaSchema.parse(req.body);
     const coleta = await prisma.coletaAmostra.create({
@@ -71,7 +91,7 @@ router.post('/', requirePerfil('ANALISTA'), async (req, res) => {
   }
 });
 
-router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
+router.put('/:id', requirePermissao('coletas', 'write'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const data = coletaSchema.parse(req.body);
@@ -88,7 +108,7 @@ router.put('/:id', requirePerfil('ANALISTA'), async (req, res) => {
   }
 });
 
-router.delete('/:id', requirePerfil('ANALISTA'), async (req, res) => {
+router.delete('/:id', requirePermissao('coletas', 'delete'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await prisma.coletaAmostra.delete({ where: { id } });

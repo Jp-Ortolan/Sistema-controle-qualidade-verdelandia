@@ -9,6 +9,7 @@ import Fichas from './pages/Fichas'
 import Coletas from './pages/Coletas'
 import Lotes from './pages/Lotes'
 import Logs from './pages/Logs'
+import Usuarios from './pages/Usuarios'
 
 function PrivatePage({ children }: { children: ReactNode }) {
   return (
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/coletas" element={<PrivatePage><Coletas /></PrivatePage>} />
         <Route path="/lotes" element={<PrivatePage><Lotes /></PrivatePage>} />
         <Route path="/logs" element={<PrivatePage><Logs /></PrivatePage>} />
+        <Route path="/usuarios" element={<PrivatePage><Usuarios /></PrivatePage>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>

@@ -1,44 +1,51 @@
+// Seed do SCQ.
+// ATENCAO: este script roda a cada deploy no Railway (railway.toml > preDeployCommands),
+// por isso ele NAO cria mais dados de demonstracao - senao lotes/analises/fichas de teste
+// voltariam a aparecer no sistema toda vez que subisse uma versao nova.
+// Ele so garante que os usuarios de acesso existam.
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
+const USUARIOS = [
+  { email: 'admin@scq.com',    nome: 'Administrador do Sistema', perfil: 'ADMIN',    senha: '123456' },
+  { email: 'analista@scq.com', nome: 'Analista de Qualidade',    perfil: 'ANALISTA', senha: '123456' },
+  { email: 'compras@scq.com',  nome: 'Setor de Compras',         perfil: 'COMPRAS',  senha: '123456' },
+  { email: 'gestor@scq.com',   nome: 'Gestor da Qualidade',      perfil: 'GESTOR',   senha: '123456' },
+];
+
 async function main() {
-  const hash = (p) => bcrypt.hash(p, 10);
+  for (const u of USUARIOS) {
+    const existente = await prisma.user.findUnique({ where: { email: u.email } });
 
-  // Users
-  await prisma.user.upsert({ where: { email: 'analista@scq.com' }, update: {}, create: { email: 'analista@scq.com', senhaHash: await hash('123456'), perfil: 'ANALISTA' } });
-  await prisma.user.upsert({ where: { email: 'compras@scq.com' }, update: {}, create: { email: 'compras@scq.com', senhaHash: await hash('123456'), perfil: 'COMPRAS' } });
-  await prisma.user.upsert({ where: { email: 'gestor@scq.com' }, update: {}, create: { email: 'gestor@scq.com', senhaHash: await hash('123456'), perfil: 'GESTOR' } });
+    if (!existente) {
+      await prisma.user.create({
+        data: {
+          nome: u.nome,
+          email: u.email,
+          senhaHash: await bcrypt.hash(u.senha, 10),
+          perfil: u.perfil,
+          ativo: true,
+          permissoes: null, // null = usa as permissoes padrao do perfil
+        },
+      });
+      console.log(`+ usuário criado: ${u.email} (${u.perfil})`);
+      continue;
+    }
 
-  // Lotes
-  const l1 = await prisma.lote.upsert({ where: { codigo: 'L2026001' }, update: {}, create: { codigo: 'L2026001', produto: 'Erva-Mate Cancheada', dataInicio: new Date('2026-01-10T12:00:00.000Z'), dataFim: new Date('2026-01-17T12:00:00.000Z') } });
-  const l2 = await prisma.lote.upsert({ where: { codigo: 'L2026002' }, update: {}, create: { codigo: 'L2026002', produto: 'Erva-Mate Cancheada', dataInicio: new Date('2026-02-15T12:00:00.000Z'), dataFim: new Date('2026-02-22T12:00:00.000Z') } });
-  await prisma.lote.upsert({ where: { codigo: 'L2026003' }, update: {}, create: { codigo: 'L2026003', produto: 'Erva-Mate Cancheada', dataInicio: new Date('2026-03-20T12:00:00.000Z'), dataFim: new Date('2026-03-27T12:00:00.000Z') } });
+    // Usuario ja existe: nao mexe em senha, perfil nem permissoes,
+    // para nao desfazer o que o administrador configurou pela tela.
+    if (!existente.nome) {
+      await prisma.user.update({ where: { email: u.email }, data: { nome: u.nome } });
+      console.log(`~ nome preenchido: ${u.email}`);
+    } else {
+      console.log(`= usuário já existe: ${u.email}`);
+    }
+  }
 
-  // Analises (ticket gerado automaticamente, mas seed define manualmente)
-  await prisma.analise.create({ data: { nomeProdutor: 'Sítio Boa Esperança', loteId: l1.id, ticket: 'TK-0001', percentualPalito: 8, teorPo: 12.5, umidade: 11.2, desconto: 2.695 } });
-  await prisma.analise.create({ data: { nomeProdutor: 'Fazenda São José', loteId: l2.id, ticket: 'TK-0002', percentualPalito: 3, teorPo: 8.0, umidade: 9.5, desconto: 0 } });
-
-  // Ficha (4 parâmetros fixos)
-  await prisma.fichaEmbalagem.create({
-    data: {
-      fornecedor: 'Ervateira Central Ltda',
-      parametros: JSON.stringify([
-        { resultado: '0.85', unidade: 'g/cm3', padrao: '0.80-0.90', unidadePadrao: 'g/cm3', conforme: true },
-        { resultado: '15x10', unidade: 'cm', padrao: '15x10', unidadePadrao: 'cm', conforme: true },
-        { resultado: 'OK', unidade: '', padrao: 'Sem defeitos', unidadePadrao: '', conforme: true },
-        { resultado: '7898901234560', unidade: '', padrao: '7898901234560', unidadePadrao: '', conforme: true },
-      ]),
-      statusGlobal: 'CONFORME',
-    },
-  });
-
-  // Coletas
-  await prisma.coletaAmostra.create({ data: { tipoProduto: 'Erva-Mate Cancheada', destino: 'Laboratório Interno', dataColeta: new Date('2026-05-10T12:00:00.000Z') } });
-  await prisma.coletaAmostra.create({ data: { tipoProduto: 'Erva-Mate Cancheada', destino: 'TECPAR', dataColeta: new Date('2026-05-15T12:00:00.000Z') } });
-
-  console.log('✅ Seed v3 concluído com sucesso!');
+  console.log('\n✅ Seed concluído (somente usuários).');
 }
 
 main()

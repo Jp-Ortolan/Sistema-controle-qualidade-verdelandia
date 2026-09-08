@@ -2,10 +2,11 @@ import { useState, useEffect, type ReactNode, type ElementType } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   BarChart3, ClipboardList, FlaskConical, Package, Menu, X,
-  LogOut, Layers, ScrollText, Sun, Moon, ChevronsLeft, ChevronsRight,
+  LogOut, Layers, ScrollText, Sun, Moon, ChevronsLeft, ChevronsRight, Users, KeyRound,
 } from 'lucide-react'
 import { getPerfil, can, type Resource } from '../lib/permissions'
 import { getInitialTheme, applyTheme, persistTheme } from '../lib/theme'
+import TrocarSenha from './TrocarSenha'
 
 interface NavItem {
   to: string
@@ -18,7 +19,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'Operação',
     items: [
-      { to: '/dashboard', icon: BarChart3,    label: 'Dashboard',          resource: null },
+      { to: '/dashboard', icon: BarChart3,    label: 'Dashboard',          resource: 'dashboard' },
       { to: '/lotes',     icon: Layers,       label: 'Lotes',              resource: 'lotes' },
       { to: '/analises',  icon: FlaskConical, label: 'Análises',           resource: 'analises' },
       { to: '/coletas',   icon: ClipboardList,label: 'Coletas de Amostra', resource: 'coletas' },
@@ -33,7 +34,8 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'Administração',
     items: [
-      { to: '/logs', icon: ScrollText, label: 'Logs de Auditoria', resource: 'logs' },
+      { to: '/usuarios', icon: Users,      label: 'Usuários',           resource: 'usuarios' },
+      { to: '/logs',     icon: ScrollText, label: 'Logs de Auditoria',  resource: 'logs' },
     ],
   },
 ]
@@ -47,6 +49,7 @@ function getInitialCollapsed(): boolean {
 export default function Layout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(getInitialCollapsed)
+  const [trocarSenha, setTrocarSenha] = useState(false)
 
   // Usa a preferência salva; na 1ª visita, segue o tema do sistema operacional.
   const [isDark, setIsDark] = useState(getInitialTheme)
@@ -169,6 +172,14 @@ export default function Layout({ children }: { children: ReactNode }) {
             </>
           )}
           <button
+            onClick={() => setTrocarSenha(true)}
+            title={collapsed ? 'Trocar minha senha' : undefined}
+            className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          >
+            <KeyRound size={14} />
+            {!collapsed && 'Trocar senha'}
+          </button>
+          <button
             onClick={logout}
             title={collapsed ? 'Sair do sistema' : undefined}
             className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-danger transition hover:bg-danger/10"
@@ -229,6 +240,8 @@ export default function Layout({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+
+      <TrocarSenha open={trocarSenha} onClose={() => setTrocarSenha(false)} />
     </div>
   )
 }

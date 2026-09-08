@@ -8,11 +8,16 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  senhaHash String
-  perfil    String
-  createdAt DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  nome       String?
+  email      String   @unique
+  senhaHash  String
+  perfil     String
+  ativo      Boolean  @default(true)
+  // JSON com as permissoes proprias do usuario (recurso -> acao -> bool).
+  // Quando nulo, valem as permissoes padrao do perfil.
+  permissoes String?
+  createdAt  DateTime @default(now())
 }
 
 model Lote {

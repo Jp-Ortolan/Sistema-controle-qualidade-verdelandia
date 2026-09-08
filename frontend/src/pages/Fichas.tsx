@@ -1,9 +1,10 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import { Plus, Search, FileDown, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Search, FileDown, Pencil, Trash2, FileSpreadsheet } from 'lucide-react'
 import { api, type FichaEmbalagem, type Parametro } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 import Pagination from '../components/Pagination'
 import Toast from '../components/Toast'
+import { baixarArquivo } from '../lib/exportar'
 import {
   Button, Field, Input, Select, Textarea, Modal, PageHeader, Badge,
   LoadingState, EmptyState, Table, Thead, Tr, Td,
@@ -25,6 +26,7 @@ export default function Fichas() {
   const canWrite = can.write('fichas', perfil)
   const canDel = can.delete('fichas', perfil)
   const canExport = can.export('fichas', perfil)
+  const [exporting, setExporting] = useState(false)
 
   const [data, setData] = useState<{ fichas: FichaEmbalagem[]; total: number }>({ fichas: [], total: 0 })
   const [loading, setLoading] = useState(true)
@@ -69,6 +71,24 @@ export default function Fichas() {
     setObservacoes('')
     setFornecedorError('')
     setObservacoesError('')
+  }
+
+
+  async function handleExportar() {
+    if (data.fichas.length === 0) {
+      setToast({ msg: 'Nenhum registro encontrado para exportar.', type: 'warn' })
+      return
+    }
+    setToast({ msg: 'Gerando a planilha, aguarde...', type: 'info' })
+    setExporting(true)
+    try {
+      await baixarArquivo(await api.fichas.exportar({ status: filters.status || undefined, dataInicio: filters.dataInicio || undefined, dataFim: filters.dataFim || undefined }), 'fichas-embalagem-scq.xlsx')
+      setToast({ msg: 'Planilha gerada com sucesso!', type: 'ok' })
+    } catch (e) {
+      setToast({ msg: e instanceof Error ? e.message : 'Erro ao gerar a planilha.', type: 'err' })
+    } finally {
+      setExporting(false)
+    }
   }
 
   function openCreate() {
@@ -174,11 +194,20 @@ export default function Fichas() {
 
       <PageHeader
         title="Fichas de Embalagem"
-        actions={canWrite && (
-          <Button onClick={openCreate}>
-            <Plus size={16} /> Nova Ficha
-          </Button>
-        )}
+        actions={
+          <>
+          {canExport && (
+            <Button variant="outline" onClick={handleExportar} loading={exporting}>
+              {!exporting && <FileSpreadsheet size={15} />} Exportar Excel
+            </Button>
+          )}
+          {canWrite && (
+            <Button onClick={openCreate}>
+              <Plus size={16} /> Nova Ficha
+            </Button>
+          )}
+          </>
+        }
       />
 
       {/* Filtros */}

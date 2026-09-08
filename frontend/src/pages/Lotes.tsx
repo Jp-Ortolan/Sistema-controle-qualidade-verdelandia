@@ -1,9 +1,10 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, FileSpreadsheet } from 'lucide-react'
 import { api, type Lote } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 import Pagination from '../components/Pagination'
 import Toast from '../components/Toast'
+import { baixarArquivo } from '../lib/exportar'
 import {
   Button, Field, Input, Textarea, Modal, PageHeader,
   LoadingState, EmptyState, Table, Thead, Tr, Td,
@@ -35,6 +36,8 @@ export default function Lotes() {
   const perfil = getPerfil()
   const canWrite = can.write('lotes', perfil)
   const canDel = can.delete('lotes', perfil)
+  const canExport = can.export('lotes', perfil)
+  const [exporting, setExporting] = useState(false)
 
   const [lotes, setLotes] = useState<Lote[]>([])
   const [page, setPage] = useState(1)
@@ -62,6 +65,24 @@ export default function Lotes() {
   }
 
   useEffect(() => { load(1) }, [])
+
+
+  async function handleExportar() {
+    if (lotes.length === 0) {
+      setToast({ msg: 'Nenhum registro encontrado para exportar.', type: 'warn' })
+      return
+    }
+    setToast({ msg: 'Gerando a planilha, aguarde...', type: 'info' })
+    setExporting(true)
+    try {
+      await baixarArquivo(await api.lotes.exportar(), 'lotes-scq.xlsx')
+      setToast({ msg: 'Planilha gerada com sucesso!', type: 'ok' })
+    } catch (e) {
+      setToast({ msg: e instanceof Error ? e.message : 'Erro ao gerar a planilha.', type: 'err' })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   function handlePageChange(pg: number) {
     setPage(pg)
@@ -157,11 +178,20 @@ export default function Lotes() {
 
       <PageHeader
         title="Lotes de Produção"
-        actions={canWrite && (
-          <Button onClick={openCreate}>
-            <Plus size={16} /> Novo Lote
-          </Button>
-        )}
+        actions={
+          <>
+          {canExport && (
+            <Button variant="outline" onClick={handleExportar} loading={exporting}>
+              {!exporting && <FileSpreadsheet size={15} />} Exportar Excel
+            </Button>
+          )}
+          {canWrite && (
+            <Button onClick={openCreate}>
+              <Plus size={16} /> Novo Lote
+            </Button>
+          )}
+          </>
+        }
       />
 
       <Modal

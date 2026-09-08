@@ -69,6 +69,27 @@ export interface AuthResponse {
   token: string
   perfil: string
   email: string
+  nome?: string | null
+  permissoes?: Record<string, Record<string, boolean>> | null
+}
+
+export interface Usuario {
+  id: number
+  nome: string | null
+  email: string
+  perfil: string
+  ativo: boolean
+  permissoesCustom: boolean
+  permissoes: Record<string, Record<string, boolean>>
+  createdAt: string
+}
+
+export interface UsuarioInput {
+  nome: string
+  email: string
+  senha?: string | null
+  perfil: string
+  permissoes?: Record<string, Record<string, boolean>> | null
 }
 
 export interface AuditLog {
@@ -164,6 +185,8 @@ export const api = {
   auth: {
     login: (email: string, senha: string) =>
       request<AuthResponse>('/auth/login', { method: 'POST', body: JSON.stringify({ email, senha }) }),
+    alterarSenha: (senhaAtual: string, novaSenha: string) =>
+      request<{ ok: boolean }>('/auth/senha', { method: 'PUT', body: JSON.stringify({ senhaAtual, novaSenha }) }),
   },
 
   dashboard: {
@@ -178,6 +201,7 @@ export const api = {
     create: (data: LoteInput) => request<Lote>('/lotes', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: number, data: LoteInput) => request<Lote>(`/lotes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) => request<void>(`/lotes/${id}`, { method: 'DELETE' }),
+    exportar: () => fetch(`${BASE}/lotes/exportar`, { headers: authHeaders() }),
   },
 
   analises: {
@@ -199,6 +223,8 @@ export const api = {
     update: (id: number, data: FichaInput) => request<FichaEmbalagem>(`/fichas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) => request<void>(`/fichas/${id}`, { method: 'DELETE' }),
     downloadPdf: (id: number) => fetch(`${BASE}/fichas/${id}/pdf`, { headers: authHeaders() }),
+    exportar: (filters?: { status?: string; dataInicio?: string; dataFim?: string }) =>
+      fetch(`${BASE}/fichas/exportar${buildParams(filters ?? {})}`, { headers: authHeaders() }),
   },
 
   coletas: {
@@ -207,11 +233,28 @@ export const api = {
     create: (data: ColetaInput) => request<ColetaAmostra>('/coletas', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: number, data: ColetaInput) => request<ColetaAmostra>(`/coletas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) => request<void>(`/coletas/${id}`, { method: 'DELETE' }),
-    exportar: () => fetch(`${BASE}/coletas/exportar`, { headers: authHeaders() }),
+    exportar: (filters?: { destino?: string; dataInicio?: string; dataFim?: string }) =>
+      fetch(`${BASE}/coletas/exportar${buildParams(filters ?? {})}`, { headers: authHeaders() }),
   },
 
   logs: {
     list: (filters?: { entidade?: string; acao?: string; pagina?: string; limite?: string }) =>
       request<LogsResponse>(`/logs${buildParams(filters ?? {})}`),
+    exportar: (filters?: { entidade?: string; acao?: string }) =>
+      fetch(`${BASE}/logs/exportar${buildParams(filters ?? {})}`, { headers: authHeaders() }),
+  },
+
+  usuarios: {
+    list: () => request<{ data: Usuario[]; total: number }>('/usuarios'),
+    create: (data: UsuarioInput & { senha: string }) =>
+      request<Usuario>('/usuarios', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: number, data: UsuarioInput) =>
+      request<Usuario>(`/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    setAtivo: (id: number, ativo: boolean) =>
+      request<Usuario>(`/usuarios/${id}/ativo`, { method: 'PATCH', body: JSON.stringify({ ativo }) }),
+    resetSenha: (id: number, senha: string) =>
+      request<Usuario>(`/usuarios/${id}/senha`, { method: 'PUT', body: JSON.stringify({ senha }) }),
+    delete: (id: number) => request<void>(`/usuarios/${id}`, { method: 'DELETE' }),
+    exportar: () => fetch(`${BASE}/usuarios/exportar`, { headers: authHeaders() }),
   },
 }

@@ -37,7 +37,12 @@ export default function Login() {
     try {
       const res = await api.auth.login(email, senha)
       localStorage.setItem('scq_token', res.token)
-      localStorage.setItem('scq_user', JSON.stringify({ email: res.email, perfil: res.perfil }))
+      localStorage.setItem('scq_user', JSON.stringify({
+        email: res.email,
+        nome: res.nome ?? null,
+        perfil: res.perfil,
+        permissoes: res.permissoes ?? null,
+      }))
       navigate('/dashboard')
     } catch (err) {
       if (err instanceof TypeError) {
