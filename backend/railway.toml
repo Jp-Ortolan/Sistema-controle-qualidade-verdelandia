@@ -2,12 +2,13 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "node src/server.js"
+# A migracao vai no startCommand, e nao em preDeployCommands: os preDeploy
+# nao rodaram no deploy de 08/09/2026 e o banco ficou sem as colunas novas
+# do User (nome, ativo, permissoes), derrubando toda rota autenticada.
+#
+# Separado por ";" e nao por "&&" de proposito: se a migracao falhar, o
+# servidor sobe mesmo assim e o erro aparece no log, em vez de o servico
+# inteiro ficar fora do ar.
+startCommand = "npx prisma db push; node prisma/seed.js; node src/server.js"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
-
-[[deploy.preDeployCommands]]
-command = "npx prisma db push"
-
-[[deploy.preDeployCommands]]
-command = "node prisma/seed.js"
