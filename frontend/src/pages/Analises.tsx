@@ -11,9 +11,13 @@ import {
 
 type ToastT = { msg: string; type: 'ok' | 'err' | 'info' | 'warn' }
 
+// RN01 - deve permanecer identico a calcularDesconto() em backend/src/routes/analises.js
+const LIMITE_PALITO = 30
+const FATOR_DESCONTO = 0.35
+
 function descontoLabel(pct: number): string {
-  if (pct <= 0.3) return '0'
-  return String(Math.round((pct - 0.3) * 0.35 * 10000) / 10000)
+  if (pct <= LIMITE_PALITO) return '0'
+  return String(Math.round((pct - LIMITE_PALITO) * FATOR_DESCONTO * 10000) / 10000)
 }
 
 function formatDate(iso: string): string {
