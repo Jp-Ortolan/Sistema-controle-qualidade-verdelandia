@@ -5,17 +5,26 @@
 // Roda em modo SIMULACAO por padrao: mostra o que entraria e o que falharia,
 // sem gravar nada. So grava com --confirmar.
 //
-// Uso:
-//   node prisma/importar-planilha.js --palitos="C:\\caminho\\controle de palitos.xlsx" \
-//                                    --lotes="C:\\caminho\\LOTES SEMANAIS ETIQUETAS 1.xlsx"
-//   ...mesma linha com --confirmar no final para gravar de verdade.
+// Uso mais simples (recomendado): deixe as duas planilhas na pasta
+// "planilhas-importacao" ao lado do projeto e rode sem argumento nenhum:
+//   npm run db:importar
+//   npm run db:importar -- --confirmar
+//
+// O script acha a pasta sozinho e identifica cada arquivo pelo nome (o que
+// tiver "palito" e o que tiver "lote"). Isso evita caminho com espaco, que
+// se quebra quando passa por railway run -> powershell -> npm -> node.
+//
+// Se precisar apontar o arquivo na mao:
+//   node prisma/importar-planilha.js --palitos="C:\\caminho\\palitos.xlsx" --lotes="C:\\caminho\\lotes.xlsx"
 //
 // Opcoes:
 //   --sem-projecao   nao inventa os lotes que faltam no fim da planilha
 //   --todos-lotes    cadastra todos os lotes da planilha, nao so os que tem analise
+//   --pasta=CAMINHO  usa outra pasta em vez de procurar sozinho
 //   --limite=N       processa so as N primeiras analises (para testar)
 
 const path = require('path');
+const fs = require('fs');
 const ExcelJS = require('exceljs');
 const { PrismaClient } = require('@prisma/client');
 const { calcularDesconto } = require('../src/lib/desconto');
@@ -30,8 +39,28 @@ const opt = (nome) => {
 };
 const tem = (nome) => args.includes(`--${nome}`);
 
-const CAMINHO_PALITOS = opt('palitos');
-const CAMINHO_LOTES = opt('lotes');
+// Procura as planilhas quando o caminho nao foi informado.
+const PASTAS_PADRAO = [
+  opt('pasta'),
+  path.resolve(process.cwd(), 'planilhas-importacao'),
+  path.resolve(__dirname, '..', '..', 'planilhas-importacao'),        // raiz do repositorio
+  path.resolve(__dirname, '..', '..', '..', 'planilhas-importacao'),  // uma pasta acima do repositorio
+].filter(Boolean);
+
+function procurar(termo) {
+  for (const pasta of PASTAS_PADRAO) {
+    let arquivos;
+    try { arquivos = fs.readdirSync(pasta); } catch { continue; }
+    const achado = arquivos.find(
+      (f) => /\.xlsx$/i.test(f) && !f.startsWith('~$') && f.toLowerCase().includes(termo),
+    );
+    if (achado) return path.join(pasta, achado);
+  }
+  return null;
+}
+
+const CAMINHO_PALITOS = opt('palitos') || procurar('palito');
+const CAMINHO_LOTES = opt('lotes') || procurar('lote');
 const CONFIRMAR = tem('confirmar');
 const PROJETAR = !tem('sem-projecao');
 const TODOS_LOTES = tem('todos-lotes');
@@ -200,15 +229,24 @@ async function lerAnalises(caminho) {
 // ── Principal ────────────────────────────────────────────────────────────
 async function main() {
   if (!CAMINHO_PALITOS) {
-    console.error('Informe a planilha de análises: --palitos="caminho/controle de palitos.xlsx"');
+    console.error('Não achei a planilha de análises (nome contendo "palito").');
+    console.error('Coloque os arquivos .xlsx numa pasta "planilhas-importacao" em um destes lugares:');
+    for (const p of PASTAS_PADRAO) console.error(`   ${p}`);
+    console.error('Ou informe o caminho: --palitos="C:\\caminho\\arquivo.xlsx"');
     process.exit(1);
+  }
+  for (const [rotulo, arq] of [['análises', CAMINHO_PALITOS], ['lotes', CAMINHO_LOTES]]) {
+    if (arq && !fs.existsSync(arq)) {
+      console.error(`Arquivo de ${rotulo} não encontrado: ${arq}`);
+      process.exit(1);
+    }
   }
 
   console.log('═'.repeat(72));
   console.log(CONFIRMAR ? '  IMPORTAÇÃO — GRAVANDO NO BANCO' : '  IMPORTAÇÃO — MODO SIMULAÇÃO (nada será gravado)');
   console.log('═'.repeat(72));
-  console.log(`  análises : ${path.basename(CAMINHO_PALITOS)}`);
-  console.log(`  lotes    : ${CAMINHO_LOTES ? path.basename(CAMINHO_LOTES) : '(nenhuma — análises entrarão sem lote)'}`);
+  console.log(`  análises : ${CAMINHO_PALITOS}`);
+  console.log(`  lotes    : ${CAMINHO_LOTES ?? '(nenhuma — análises entrarão sem lote)'}`);
 
   // 1. Analises
   const { validas, problemas, avisos, vazias, semAnalise } = await lerAnalises(CAMINHO_PALITOS);
