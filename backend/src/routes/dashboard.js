@@ -31,18 +31,18 @@ router.get('/', async (_req, res) => {
     top5Raw,
   ] = await Promise.all([
     safe(() => prisma.analise.count(), 0),
-    safe(() => prisma.analise.count({ where: { createdAt: { gte: inicioSemana } } }), 0),
+    safe(() => prisma.analise.count({ where: { dataAnalise: { gte: inicioSemana } } }), 0),
     safe(() => prisma.fichaEmbalagem.count({ where: { statusGlobal: 'CONFORME' } }), 0),
     safe(() => prisma.fichaEmbalagem.count({ where: { statusGlobal: 'NAO_CONFORME' } }), 0),
     safe(() => prisma.coletaAmostra.count(), 0),
     safe(() => prisma.analise.findMany({
       take: 5,
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, ticket: true, nomeProdutor: true, percentualPalito: true, desconto: true, createdAt: true },
+      orderBy: [{ dataAnalise: 'desc' }, { id: 'desc' }],
+      select: { id: true, ticket: true, nomeProdutor: true, percentualPalito: true, desconto: true, dataAnalise: true, createdAt: true },
     }), []),
     safe(() => prisma.analise.findMany({
-      where: { createdAt: { gte: sete } },
-      select: { createdAt: true },
+      where: { dataAnalise: { gte: sete } },
+      select: { dataAnalise: true },
     }), []),
     safe(() => prisma.analise.groupBy({
       by: ['nomeProdutor'],
@@ -60,7 +60,7 @@ router.get('/', async (_req, res) => {
     dayMap.set(d.toISOString().slice(0, 10), 0);
   }
   for (const a of recentRaw) {
-    const key = a.createdAt.toISOString().slice(0, 10);
+    const key = a.dataAnalise.toISOString().slice(0, 10);
     if (dayMap.has(key)) dayMap.set(key, dayMap.get(key) + 1);
   }
   const analisesPorDia = Array.from(dayMap.entries()).map(([dia, total]) => ({ dia, total }));

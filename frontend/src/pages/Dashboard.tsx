@@ -137,7 +137,7 @@ export default function Dashboard() {
                   <Td>
                     <Badge tone={a.desconto === 0 ? 'success' : 'warning'} className="font-mono">{a.desconto}%</Badge>
                   </Td>
-                  <Td className="font-mono text-xs text-muted-foreground">{new Date(a.createdAt).toLocaleDateString('pt-BR')}</Td>
+                  <Td className="font-mono text-xs text-muted-foreground">{new Date(a.dataAnalise ?? a.createdAt).toLocaleDateString('pt-BR')}</Td>
                 </Tr>
               ))}
             </tbody>

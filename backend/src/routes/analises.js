@@ -35,17 +35,23 @@ const analiseSchema = z.object({
 
 const INCLUDE = LOTE_INCLUDE;
 
+// Filtro e ordenacao usam dataAnalise (quando a analise foi feita), e nao
+// createdAt (quando o registro entrou no sistema). Sao coisas diferentes:
+// na importacao do historico, 1.414 analises de 10 meses entraram no mesmo
+// dia, e por createdAt todas apareciam como se fossem de hoje.
+// O id entra como segundo criterio para a paginacao nao repetir nem pular
+// linha quando varias analises tem a mesma data.
 router.get('/', requirePermissao('analises', 'view'), async (req, res) => {
   try {
     const { nomeProdutor, dataInicio, dataFim, page = '1', limit = '10' } = req.query;
     const where = {};
     if (nomeProdutor) where.nomeProdutor = { contains: nomeProdutor, mode: 'insensitive' };
     const dr = buildDateRange(dataInicio, dataFim);
-    if (dr) where.createdAt = dr;
+    if (dr) where.dataAnalise = dr;
     const take = parseInt(limit);
     const skip = (parseInt(page) - 1) * take;
     const [data, total] = await Promise.all([
-      prisma.analise.findMany({ where, include: INCLUDE, orderBy: { createdAt: 'desc' }, skip, take }),
+      prisma.analise.findMany({ where, include: INCLUDE, orderBy: [{ dataAnalise: 'desc' }, { id: 'desc' }], skip, take }),
       prisma.analise.count({ where }),
     ]);
     return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / take) });
@@ -59,8 +65,8 @@ router.get('/exportar/excel', requirePermissao('analises', 'export'), async (req
     const where = {};
     if (nomeProdutor) where.nomeProdutor = { contains: nomeProdutor, mode: 'insensitive' };
     const dr = buildDateRange(dataInicio, dataFim);
-    if (dr) where.createdAt = dr;
-    const analises = await prisma.analise.findMany({ where, include: INCLUDE, orderBy: { createdAt: 'desc' } });
+    if (dr) where.dataAnalise = dr;
+    const analises = await prisma.analise.findMany({ where, include: INCLUDE, orderBy: [{ dataAnalise: 'desc' }, { id: 'desc' }] });
 
     const media = (campo) => {
       const vals = analises.map((a) => a[campo]).filter((v) => typeof v === 'number');
@@ -117,8 +123,8 @@ router.get('/exportar/pdf', requirePermissao('analises', 'export'), async (req, 
     const where = {};
     if (nomeProdutor) where.nomeProdutor = { contains: nomeProdutor, mode: 'insensitive' };
     const dr = buildDateRange(dataInicio, dataFim);
-    if (dr) where.createdAt = dr;
-    const analises = await prisma.analise.findMany({ where, include: INCLUDE, orderBy: { createdAt: 'desc' } });
+    if (dr) where.dataAnalise = dr;
+    const analises = await prisma.analise.findMany({ where, include: INCLUDE, orderBy: [{ dataAnalise: 'desc' }, { id: 'desc' }] });
 
     const pdfMake = require('pdfmake/build/pdfmake');
     const pdfFonts = require('pdfmake/build/vfs_fonts');

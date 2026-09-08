@@ -122,6 +122,7 @@ export interface DashboardData {
     nomeProdutor: string
     percentualPalito: number
     desconto: number
+    dataAnalise: string
     createdAt: string
   }>
   analisesPorDia: Array<{ dia: string; total: number }>
