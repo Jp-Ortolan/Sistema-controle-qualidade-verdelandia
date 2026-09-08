@@ -11,7 +11,8 @@
     "db:reset": "npx prisma migrate reset --force && node prisma/seed.js",
     "setup": "npx prisma migrate dev --name init && node prisma/seed.js",
     "db:limpar": "node prisma/limpar-dados.js",
-    "test:api": "node testes/teste-api.js"
+    "test:api": "node testes/teste-api.js",
+    "db:importar": "node prisma/importar-planilha.js"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

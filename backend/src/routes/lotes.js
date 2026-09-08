@@ -18,10 +18,15 @@ const podeLerLotes = (req, res, next) => {
 };
 
 const loteSchema = z.object({
-  codigo: z.string()
-    .min(2, 'Código deve ter pelo menos 2 caracteres')
-    .max(20, 'Código deve ter no máximo 20 caracteres')
-    .regex(/^[a-zA-Z0-9]+$/, 'Código deve conter apenas letras e números'),
+  // Aceita espaco no meio (a fabrica escreve "L 10"), mas normaliza antes de
+  // validar: tira espaco das pontas e reduz espacos repetidos a um so.
+  codigo: z.preprocess(
+    (v) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ') : v),
+    z.string()
+      .min(1, 'Código é obrigatório')
+      .max(20, 'Código deve ter no máximo 20 caracteres')
+      .regex(/^[a-zA-Z0-9 ]+$/, 'Código deve conter apenas letras, números e espaços'),
+  ),
   dataInicio: z.string().min(1, 'Data de início obrigatória'),
   dataFim: z.string().min(1, 'Data de fim obrigatória'),
   observacao: z.string().max(500, 'Observação deve ter no máximo 500 caracteres').optional(),

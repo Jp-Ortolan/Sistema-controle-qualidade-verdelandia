@@ -6,6 +6,7 @@ const { requirePermissao } = require('../middleware/permissao');
 const { auditLog } = require('../lib/logger');
 const { buildDateRange, LOTE_INCLUDE } = require('../lib/utils');
 const { enviarPlanilha, dataBR, texto } = require('../lib/excel');
+const { calcularDesconto } = require('../lib/desconto');
 
 const router = express.Router();
 router.use(auth);
@@ -14,7 +15,10 @@ const analiseSchema = z.object({
   nomeProdutor: z.string()
     .min(2, 'Produtor deve ter pelo menos 2 caracteres')
     .max(100, 'Produtor deve ter no máximo 100 caracteres')
-    .regex(/^[a-zA-ZÀ-ú\s]+$/, 'Produtor deve conter apenas letras e espaços')
+    // Uma carga pode vir de varios produtores; a fabrica separa por ";".
+    // Ponto e virgula sao aceitos por isso, e ponto/hifen/apostrofo por causa
+    // de abreviacoes e sobrenomes compostos.
+    .regex(/^[a-zA-ZÀ-ú\s.,;'-]+$/, 'Produtor deve conter apenas letras, espaços e os sinais . , ; - \'')
     .optional().nullable(),
   ticket: z.string()
     .min(1, 'Ticket obrigatório')
@@ -28,19 +32,6 @@ const analiseSchema = z.object({
   umidade: z.number().min(0).max(100).optional().nullable(),
   observacao: z.string().max(500, 'Observação deve ter no máximo 500 caracteres').optional().nullable(),
 });
-
-// RN01 - Desconto por teor de palito (Industria Ervateira Verdelandia LTDA).
-// O teor de palito e informado em pontos percentuais (ex.: 36 = 36%).
-// Ate 30% nao ha desconto; acima disso desconta-se 35% do excedente.
-// Fonte: planilha RELATORIO FECHAMENTO - abas PALITOS (col. G) e
-// DADOS ENTRADA DE MATERIA PRIMA (col. Q): =SE(palito<=30%;0;(palito-30%)*35%)
-const LIMITE_PALITO = 30;   // % de palito isento de desconto
-const FATOR_DESCONTO = 0.35; // 35% sobre o excedente
-
-function calcularDesconto(pct) {
-  if (pct <= LIMITE_PALITO) return 0;
-  return Math.round((pct - LIMITE_PALITO) * FATOR_DESCONTO * 10000) / 10000;
-}
 
 const INCLUDE = LOTE_INCLUDE;
 

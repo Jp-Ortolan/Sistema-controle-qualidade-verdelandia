@@ -134,7 +134,7 @@ export default function Analises() {
     if (prod) {
       if (prod.length < 2) errs.nomeProdutor = 'Produtor deve ter pelo menos 2 caracteres'
       else if (prod.length > 100) errs.nomeProdutor = 'Produtor deve ter no máximo 100 caracteres'
-      else if (!/^[a-zA-ZÀ-ú\s]+$/.test(prod)) errs.nomeProdutor = 'Produtor deve conter apenas letras e espaços'
+      else if (!/^[a-zA-ZÀ-ú\s.,;'-]+$/.test(prod)) errs.nomeProdutor = 'Produtor deve conter apenas letras, espaços e os sinais . , ; -'
     }
     if (!form.dataAnalise) errs.dataAnalise = 'Data da análise é obrigatória'
     if (!form.percentualPalito) errs.percentualPalito = 'Teor de palito é obrigatório'
