@@ -44,6 +44,16 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Corpo bruto para o upload de planilha (POST /api/analises/importar).
+// So intercepta quando o Content-Type e de arquivo, o resto segue em JSON.
+app.use(express.raw({
+  type: [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/octet-stream',
+  ],
+  limit: '15mb',
+}));
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/analises', require('./routes/analises'));
 app.use('/api/fichas', require('./routes/fichas'));

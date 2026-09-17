@@ -27,7 +27,7 @@ const path = require('path');
 const fs = require('fs');
 const ExcelJS = require('exceljs');
 const { PrismaClient } = require('@prisma/client');
-const { calcularDesconto } = require('../src/lib/desconto');
+const { lerAnalises, valor, arred, soData } = require('../src/lib/importacao');
 
 const prisma = new PrismaClient();
 
@@ -69,30 +69,8 @@ const LIMITE = opt('limite') ? parseInt(opt('limite')) : null;
 const PRODUTO = 'Erva-Mate Cancheada';
 
 // ── Utilidades ───────────────────────────────────────────────────────────
-const soData = (d) => new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0));
 const chaveDia = (d) => d.toISOString().slice(0, 10);
 const brDate = (d) => `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
-
-// exceljs devolve objeto quando a celula tem formula ou texto rico
-function valor(celula) {
-  const v = celula?.value;
-  if (v === null || v === undefined) return null;
-  if (v instanceof Date) return v;
-  if (typeof v === 'object') {
-    if ('result' in v) return v.result;
-    if ('text' in v) return v.text;
-    if ('richText' in v) return v.richText.map((r) => r.text).join('');
-    return null;
-  }
-  return v;
-}
-
-const ehX = (v) => typeof v === 'string' && v.trim().toLowerCase() === 'x';
-
-function arred(n, casas = 2) {
-  const f = 10 ** casas;
-  return Math.round(n * f) / f;
-}
 
 // ── Leitura dos lotes ────────────────────────────────────────────────────
 async function lerLotes(caminho) {
@@ -148,82 +126,6 @@ function projetarLotes(lotes, ultimaData) {
     inicio = new Date(fim.getTime() + 24 * 3600 * 1000);
   }
   return novos;
-}
-
-// ── Leitura das analises ─────────────────────────────────────────────────
-async function lerAnalises(caminho) {
-  const wb = new ExcelJS.Workbook();
-  await wb.xlsx.readFile(caminho);
-  const ws = wb.worksheets[0];
-
-  const validas = [];
-  const problemas = [];
-  let vazias = 0;
-  let semAnalise = 0;
-  const ticketsVistos = new Map();
-
-  ws.eachRow((linha, n) => {
-    if (n < 2) return;
-    const data = valor(linha.getCell(2));
-    const ticket = valor(linha.getCell(3));
-    const umidade = valor(linha.getCell(4));
-    const teorPo = valor(linha.getCell(5));
-    const palito = valor(linha.getCell(6));
-    const fornecedor = valor(linha.getCell(7));
-
-    const tudoVazio = [data, ticket, umidade, teorPo, palito, fornecedor].every((c) => c === null);
-    if (tudoVazio) { vazias += 1; return; }
-
-    // "x" = amostra sem analise feita
-    if (ehX(palito) || ehX(umidade)) { semAnalise += 1; return; }
-    if (palito === null && umidade === null && teorPo === null) { vazias += 1; return; }
-
-    const erros = [];
-
-    if (typeof ticket !== 'number') erros.push('ticket ausente ou não numérico');
-    // Ticket quebrado (ex.: 10245.1428571429) acontece quando alguem arrasta a
-    // celula no Excel e ele gera uma serie interpolada. Nao pode entrar assim.
-    else if (!Number.isInteger(ticket)) erros.push(`ticket não é um número inteiro (${ticket})`);
-    else if (ticketsVistos.has(ticket)) erros.push(`ticket ${ticket} repetido (já apareceu na linha ${ticketsVistos.get(ticket)})`);
-
-    if (typeof palito !== 'number') erros.push('sem teor de palito');
-    else if (!(palito > 0 && palito <= 1)) erros.push(`teor de palito fora da faixa (${arred(palito * 100)}%)`);
-
-    if (!(data instanceof Date)) erros.push(data === null ? 'sem data' : `data inválida (${String(data)})`);
-
-    if (typeof umidade === 'number' && !(umidade > 0 && umidade <= 20)) erros.push(`umidade fora da faixa (${umidade})`);
-    if (typeof teorPo === 'number' && !(teorPo >= 0 && teorPo <= 30)) erros.push(`teor de pó fora da faixa (${teorPo})`);
-
-    if (Number.isInteger(ticket) && !ticketsVistos.has(ticket)) ticketsVistos.set(ticket, n);
-
-    if (erros.length > 0) { problemas.push({ linha: n, ticket, erros }); return; }
-
-    const pct = arred(palito * 100);
-    validas.push({
-      linha: n,
-      ticket: String(ticket),
-      data: soData(data),
-      percentualPalito: pct,
-      desconto: calcularDesconto(pct),
-      teorPo: typeof teorPo === 'number' ? teorPo : null,
-      umidade: typeof umidade === 'number' ? arred(umidade) : null,
-      nomeProdutor: fornecedor ? String(fornecedor).trim().replace(/\s+/g, ' ') : '',
-    });
-  });
-
-  // Ticket que destoa MUITO dos vizinhos costuma ser digito digitado a mais
-  // (ex.: 50513 no meio de 10512 e 10514). Nao bloqueia a importacao, so avisa.
-  const avisos = [];
-  for (let i = 1; i < validas.length - 1; i += 1) {
-    const t = Number(validas[i].ticket);
-    const ant = Number(validas[i - 1].ticket);
-    const prox = Number(validas[i + 1].ticket);
-    if (Math.abs(t - ant) > 2000 && Math.abs(t - prox) > 2000) {
-      avisos.push({ linha: validas[i].linha, ticket: validas[i].ticket, vizinhos: [ant, prox] });
-    }
-  }
-
-  return { validas, problemas, avisos, vazias, semAnalise };
 }
 
 // ── Principal ────────────────────────────────────────────────────────────

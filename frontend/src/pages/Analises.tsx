@@ -1,9 +1,10 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import { Plus, Search, Pencil, Trash2, Copy, FileSpreadsheet, FileText } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Copy, FileSpreadsheet, FileText, Upload } from 'lucide-react'
 import { api, type Analise, type Lote } from '../services/api'
 import { getPerfil, can } from '../lib/permissions'
 import Pagination from '../components/Pagination'
 import Toast from '../components/Toast'
+import ImportarAnalises from '../components/ImportarAnalises'
 import {
   Button, Field, Input, Select, Textarea, Modal, PageHeader, Badge,
   LoadingState, EmptyState, Table, Thead, Tr, Td,
@@ -54,6 +55,7 @@ export default function Analises() {
   const canWrite = can.write('analises', perfil)
   const canDel = can.delete('analises', perfil)
   const canExport = can.export('analises', perfil)
+  const [showImportar, setShowImportar] = useState(false)
 
   const [analises, setAnalises] = useState<Analise[]>([])
   const [lotes, setLotes] = useState<Lote[]>([])
@@ -250,6 +252,12 @@ export default function Analises() {
 
   return (
     <div>
+      <ImportarAnalises
+        open={showImportar}
+        onClose={() => setShowImportar(false)}
+        onImportado={() => { setPage(1); load(1) }}
+      />
+
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
       <PageHeader
@@ -264,6 +272,11 @@ export default function Analises() {
             {canExport && (
               <Button variant="outline" className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20" onClick={() => handleExport('excel')}>
                 <FileSpreadsheet size={15} /> Exportar Excel
+              </Button>
+            )}
+            {canWrite && (
+              <Button variant="outline" onClick={() => setShowImportar(true)}>
+                <Upload size={15} /> Importar Excel
               </Button>
             )}
             {canWrite && (

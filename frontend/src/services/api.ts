@@ -65,6 +65,48 @@ export interface ColetaAmostra {
   createdAt: string
 }
 
+export interface ImportacaoProblema {
+  linha: number
+  ticket: number | null
+  erros: string[]
+}
+
+export interface ImportacaoAviso {
+  linha: number
+  ticket: string
+  vizinhos: number[]
+}
+
+export interface ImportacaoResultado {
+  simulacao: boolean
+  inseridas?: number
+  aba: string
+  cabecalhoDetectado: boolean
+  unidadePalito: 'fracao' | 'percentual'
+  totalLinhas: number
+  vazias: number
+  semAnalise: number
+  comProblema: number
+  validas: number
+  jaNoBanco: number
+  aInserir: number
+  comLote: number
+  semLote: number
+  comDesconto: number
+  periodo: { de: string; ate: string } | null
+  problemas: ImportacaoProblema[]
+  problemasOcultos: number
+  avisos: ImportacaoAviso[]
+  amostra: Array<{
+    ticket: string
+    data: string
+    percentualPalito: number
+    desconto: number
+    lote: string | null
+    nomeProdutor: string
+  }>
+}
+
 export interface AuthResponse {
   token: string
   perfil: string
@@ -215,6 +257,14 @@ export const api = {
       fetch(`${BASE}/analises/exportar/excel${buildParams(filters ?? {})}`, { headers: authHeaders() }),
     exportarPdf: (filters?: { nomeProdutor?: string; dataInicio?: string; dataFim?: string }) =>
       fetch(`${BASE}/analises/exportar/pdf${buildParams(filters ?? {})}`, { headers: authHeaders() }),
+    importar: (arquivo: File, confirmar = false) =>
+      request<ImportacaoResultado>(`/analises/importar${confirmar ? '?confirmar=1' : ''}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+        body: arquivo,
+      }),
+    modeloImportacao: () =>
+      fetch(`${BASE}/analises/importar/modelo`, { headers: authHeaders() }),
   },
 
   fichas: {

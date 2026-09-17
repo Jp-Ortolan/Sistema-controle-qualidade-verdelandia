@@ -7,6 +7,8 @@ const { auditLog } = require('../lib/logger');
 const { buildDateRange, LOTE_INCLUDE } = require('../lib/utils');
 const { enviarPlanilha, dataBR, texto } = require('../lib/excel');
 const { calcularDesconto } = require('../lib/desconto');
+const { lerAnalises } = require('../lib/importacao');
+const ExcelJS = require('exceljs');
 
 const router = express.Router();
 router.use(auth);
@@ -200,6 +202,159 @@ router.get('/exportar/pdf', requirePermissao('analises', 'export'), async (req, 
   } catch (err) {
     console.error('[analises/pdf]', err?.message);
     if (!res.headersSent) return res.status(500).json({ error: 'Erro ao gerar PDF' });
+  }
+});
+
+
+// ── Importar planilha de análises ───────────────────────────────────────
+// O arquivo chega como corpo bruto (express.raw no server.js), evitando
+// dependência de upload multipart. Sem ?confirmar=1 é só simulação.
+const LIMITE_PROBLEMAS = 200;
+const LIMITE_AMOSTRA = 8;
+
+router.post('/importar', requirePermissao('analises', 'write'), async (req, res) => {
+  try {
+    const arquivo = req.body;
+    if (!Buffer.isBuffer(arquivo) || arquivo.length === 0) {
+      return res.status(400).json({ error: 'Nenhum arquivo recebido. Envie uma planilha .xlsx.' });
+    }
+
+    let leitura;
+    try {
+      leitura = await lerAnalises(arquivo);
+    } catch (e) {
+      console.error('[analises/importar] leitura', e?.message);
+      return res.status(400).json({ error: 'Não foi possível ler a planilha. Confira se o arquivo é um .xlsx válido.' });
+    }
+
+    const { validas, problemas, avisos, vazias, semAnalise, unidadePalito, cabecalhoDetectado, aba } = leitura;
+
+    // Tickets que já existem: a importação pode ser repetida sem duplicar nada.
+    const tickets = validas.map((a) => a.ticket);
+    const jaNoBanco = new Set(
+      (await prisma.analise.findMany({ where: { ticket: { in: tickets } }, select: { ticket: true } }))
+        .map((a) => a.ticket),
+    );
+    const novas = validas.filter((a) => !jaNoBanco.has(a.ticket));
+
+    // Amarra cada análise ao lote cujo período contém a data. Não cria lote.
+    const lotes = await prisma.lote.findMany({ select: { id: true, codigo: true, dataInicio: true, dataFim: true } });
+    const acharLote = (d) => lotes.find((l) => d >= l.dataInicio && d <= l.dataFim) ?? null;
+    for (const a of novas) a.lote = acharLote(a.data);
+    const comLote = novas.filter((a) => a.lote).length;
+
+    const periodo = novas.length
+      ? { de: novas.reduce((x, y) => (x.data < y.data ? x : y)).data,
+          ate: novas.reduce((x, y) => (x.data > y.data ? x : y)).data }
+      : null;
+
+    const resumo = {
+      aba,
+      cabecalhoDetectado,
+      unidadePalito,
+      totalLinhas: validas.length + problemas.length + vazias + semAnalise,
+      vazias,
+      semAnalise,
+      comProblema: problemas.length,
+      validas: validas.length,
+      jaNoBanco: validas.length - novas.length,
+      aInserir: novas.length,
+      comLote,
+      semLote: novas.length - comLote,
+      comDesconto: novas.filter((a) => a.desconto > 0).length,
+      periodo,
+      problemas: problemas.slice(0, LIMITE_PROBLEMAS),
+      problemasOcultos: Math.max(0, problemas.length - LIMITE_PROBLEMAS),
+      avisos,
+      amostra: novas.slice(0, LIMITE_AMOSTRA).map((a) => ({
+        ticket: a.ticket, data: a.data, percentualPalito: a.percentualPalito,
+        desconto: a.desconto, lote: a.lote?.codigo ?? null, nomeProdutor: a.nomeProdutor,
+      })),
+    };
+
+    if (req.query.confirmar !== '1') {
+      return res.json({ simulacao: true, ...resumo });
+    }
+
+    if (novas.length === 0) {
+      return res.json({ simulacao: false, inseridas: 0, ...resumo });
+    }
+
+    let inseridas = 0;
+    const BLOCO = 200;
+    for (let i = 0; i < novas.length; i += BLOCO) {
+      const bloco = novas.slice(i, i + BLOCO);
+      await prisma.analise.createMany({
+        data: bloco.map((a) => ({
+          nomeProdutor: a.nomeProdutor,
+          loteId: a.lote?.id ?? null,
+          ticket: a.ticket,
+          dataAnalise: a.data,
+          dataFabricacao: null,
+          percentualPalito: a.percentualPalito,
+          teorPo: a.teorPo,
+          umidade: a.umidade,
+          desconto: a.desconto,
+          observacao: 'Importado de planilha',
+        })),
+      });
+      inseridas += bloco.length;
+    }
+
+    auditLog(req, 'IMPORTAR', 'ANALISE', 0, {
+      inseridas, ignoradas: resumo.jaNoBanco, comProblema: problemas.length,
+    });
+    return res.json({ simulacao: false, inseridas, ...resumo });
+  } catch (err) {
+    console.error('[analises/importar]', err?.message ?? err);
+    return res.status(500).json({ error: 'Erro ao importar a planilha' });
+  }
+});
+
+// Modelo em branco, com os cabeçalhos que a importação reconhece.
+router.get('/importar/modelo', requirePermissao('analises', 'write'), async (_req, res) => {
+  try {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Análises');
+    const cabs = ['Data', 'Ticket', 'Umidade (%)', 'Teor de Pó (%)', 'Teor de Palito (%)', 'Produtor'];
+    ws.columns = cabs.map((c, i) => ({ header: c, width: [14, 12, 14, 16, 18, 30][i] }));
+
+    const cab = ws.getRow(1);
+    cabs.forEach((_, i) => {
+      const cel = cab.getCell(i + 1);
+      cel.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      cel.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF065F46' } };
+      cel.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+    cab.height = 22;
+
+    const exemplos = [
+      [new Date(2026, 8, 1), 10900, 3.4, 3, 24, 'Sítio Boa Esperança'],
+      [new Date(2026, 8, 1), 10901, 4.1, 5, 36, 'Fazenda São José'],
+    ];
+    exemplos.forEach((linha, i) => {
+      const r = ws.getRow(i + 2);
+      linha.forEach((v, j) => {
+        const cel = r.getCell(j + 1);
+        cel.value = v;
+        cel.font = { name: 'Calibri', size: 10, italic: true, color: { argb: 'FF6B7280' } };
+        if (j === 0) cel.numFmt = 'dd/mm/yyyy';
+        if (j > 0) cel.alignment = { horizontal: j === 5 ? 'left' : 'center' };
+      });
+    });
+
+    const nota = ws.getRow(5);
+    nota.getCell(1).value = 'Apague as duas linhas de exemplo antes de importar. O desconto é calculado pelo sistema, não precisa vir na planilha.';
+    nota.getCell(1).font = { name: 'Calibri', size: 9, italic: true, color: { argb: 'FF6B7280' } };
+    ws.mergeCells('A5:F5');
+
+    const buffer = await wb.xlsx.writeBuffer();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=modelo-importacao-analises.xlsx');
+    return res.send(Buffer.from(buffer));
+  } catch (err) {
+    console.error('[analises/modelo]', err?.message);
+    return res.status(500).json({ error: 'Erro ao gerar o modelo' });
   }
 });
 

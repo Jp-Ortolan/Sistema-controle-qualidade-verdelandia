@@ -12,7 +12,10 @@
     "setup": "npx prisma migrate dev --name init && node prisma/seed.js",
     "db:limpar": "node prisma/limpar-dados.js",
     "test:api": "node testes/teste-api.js",
-    "db:importar": "node prisma/importar-planilha.js"
+    "db:importar": "node prisma/importar-planilha.js",
+    "test:importacao": "node testes/teste-importacao.js",
+    "db:demo": "node prisma/dados-demonstracao.js",
+    "test:demo": "node testes/teste-demonstracao.js"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
