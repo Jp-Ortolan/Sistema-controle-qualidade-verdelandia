@@ -88,12 +88,6 @@
     <p class="lead">O que foi construído e por quê</p>
     <p>A Indústria Ervateira Verdelândia LTDA controlava a qualidade da erva-mate recebida por meio de planilhas eletrônicas: o teor de palito de cada carga, as fichas de liberação de embalagens e as coletas de amostra viviam em arquivos separados, sem histórico confiável e sem controle de quem alterava o quê. O desconto pago ao produtor por excesso de palito dependia de uma fórmula mantida à mão na planilha.</p>
     <p>O SCQ substitui esse conjunto de planilhas por uma aplicação web única, hospedada em nuvem e acessível de qualquer computador da fábrica. O cálculo do desconto passou a ser feito pelo servidor a cada análise registrada, a partir da regra oficial da empresa, e toda alteração fica registrada com autor, data e hora.</p>
-    <div class="stats">
-      <div class="stat"><b>1.414</b><span>análises históricas importadas, de nov/2025 a set/2026</span></div>
-      <div class="stat"><b>37</b><span>lotes semanais reconstruídos e vinculados</span></div>
-      <div class="stat"><b>6</b><span>módulos: análises, lotes, fichas, coletas, usuários e auditoria</span></div>
-      <div class="stat"><b>3</b><span>sprints, mais implantação, treinamento e entrega final</span></div>
-    </div>
   </div>
 </section>
 
@@ -121,44 +115,29 @@
     <h2>Documentação completa</h2>
     <p class="lead">Requisitos, arquitetura, manuais e material de apoio</p>
     <div class="grid g2">
-      <a class="card" href="arquivos/SCQ_Documentacao_Consolidada_v3.pdf">
-        <h3>Documentação consolidada</h3>
-        <p>Documento único subdividido em Especificação de Requisitos, Arquitetura e Design, Manual do Usuário, Manual Técnico e Plano de Implantação.</p>
-        <span class="tag">PDF</span>
-      </a>
-      <a class="card" href="arquivos/Guia_Rapido_de_Uso_SCQ.pdf">
-        <h3>Guia Rápido de Uso</h3>
-        <p>Material de consulta rápida para o dia a dia dos usuários do sistema.</p>
-        <span class="tag">PDF</span>
-      </a>
-      <a class="card" href="arquivos/Material_Treinamento_SCQ.pdf">
-        <h3>Material de Treinamento</h3>
-        <p>Apresentação utilizada na capacitação dos funcionários da entidade.</p>
-        <span class="tag">PDF</span>
-      </a>
-      <a class="card" href="arquivos/Relatorio_Implantacao_Piloto_SCQ.pdf">
-        <h3>Relatório de Implantação Piloto</h3>
-        <p>Processo de publicação em produção, desafios encontrados, testes pós-implantação e recomendações à entidade.</p>
-        <span class="tag">PDF</span>
-      </a>
-      <a class="card" href="arquivos/Sistema_Implementado_e_Operacional_SCQ.pdf">
-        <h3>Sistema Implementado e Operacional</h3>
-        <p>Comprovação do sistema em funcionamento no ambiente de produção.</p>
-        <span class="tag">PDF</span>
+      <a class="card destaque" href="arquivos/SCQ_Documentacao_Tecnica.pdf">
+        <h3>Documentação Técnica e Acadêmica</h3>
+        <p>Documento principal do projeto: requisitos, modelagem, arquitetura, decisões técnicas, implantação e orientações de uso, com os diagramas UML.</p>
+        <span class="tag">PDF · 27 páginas</span>
       </a>
       <a class="card" href="arquivos/Projeto_qualidade_Verdelandia.pdf">
         <h3>Documento do Projeto</h3>
-        <p>Documento de concepção do produto, com o problema, o escopo e a proposta de solução.</p>
+        <p>Documento de concepção do produto, com o problema identificado na entidade, o escopo e a proposta de solução.</p>
         <span class="tag">PDF</span>
       </a>
       <a class="card" href="arquivos/Backlog_Verdelandia.pdf">
         <h3>Backlog do Produto</h3>
-        <p>Relação das histórias de usuário, critérios de aceite e priorização.</p>
+        <p>Relação completa das histórias de usuário, com descrição, story points e a sprint em que cada uma foi trabalhada.</p>
         <span class="tag">PDF</span>
       </a>
       <a class="card" href="arquivos/Lista_Ajustes_Melhorias_SCQ.pdf">
         <h3>Lista de Ajustes e Melhorias</h3>
-        <p>Ajustes solicitados pela entidade durante a fase de validação com usuários reais.</p>
+        <p>Ajustes solicitados pela entidade durante a fase de validação, com a user story correspondente, a origem do feedback e a prioridade.</p>
+        <span class="tag">PDF</span>
+      </a>
+      <a class="card" href="arquivos/Relatorio_Implantacao_SCQ.pdf">
+        <h3>Relatório de Implantação</h3>
+        <p>Processo de publicação em produção, obstáculos enfrentados, soluções aplicadas, estado atual do sistema e recomendações à entidade.</p>
         <span class="tag">PDF</span>
       </a>
     </div>
@@ -224,14 +203,14 @@
       <p class="quando">24 de agosto de 2026 · semanas 19 e 20</p>
       <p>Publicação definitiva em produção, configuração do deploy automático e capacitação dos usuários da entidade. A conferência do sistema contra a planilha oficial de fechamento levou à correção do limite de isenção da regra de desconto por teor de palito.</p>
       <p class="licao">Aprendizado: confrontar o sistema com os dados reais da entidade revelou divergências que nenhum teste sintético teria encontrado.</p>
-      <a href="arquivos/Relatorio_Implantacao_Piloto_SCQ.pdf">Relatório completo (PDF)</a>
+      <a href="arquivos/Relatorio_Implantacao_SCQ.pdf">Relatório completo (PDF)</a>
     </div>
 
     <div class="sprint">
       <h3>Entrega final</h3>
       <p class="quando">Setembro de 2026 · semana 21</p>
-      <p>Gestão de usuários com permissão por aba, troca da própria senha, exportação em Excel em todos os módulos e importação do histórico que estava em planilha: 1.414 análises e 37 lotes. A conferência registro a registro durante a migração revelou que a fórmula de desconto da planilha havia deixado de ser calculada a partir de maio de 2026, deixando 98 cargas sem o desconto devido.</p>
-      <p class="licao">Aprendizado: migrar dados reais é também auditá-los — o valor entregue à entidade não veio só do software, mas do que a migração expôs.</p>
+      <p>Gestão de usuários com permissão de acesso por aba, troca da própria senha pelo usuário, exportação em Excel em todos os módulos e importação de análises por planilha, com conferência das linhas antes de gravar. O sistema ficou pronto para receber o histórico que hoje está em planilha, com a carga prevista para uma etapa seguinte.</p>
+      <p class="licao">Aprendizado: validar a planilha antes de gravar no banco — mostrar ao usuário o que vai entrar, o que já existe e o que tem problema — evita que um erro de origem vire um erro de sistema.</p>
     </div>
   </div>
 </section>
@@ -243,7 +222,7 @@
     <div class="grid g2">
       <a class="card" href="arquivos/Apresentacao_Final_SCQ_Verdelandia.pdf">
         <h3>Apresentação Final</h3>
-        <p>Slides da apresentação de encerramento, com o problema, a solução, o impacto na entidade, as tecnologias e as lições aprendidas.</p>
+        <p>Slides da apresentação de encerramento: problema e solução, demonstração ao vivo, impacto na entidade, tecnologias, desafios técnicos, lições aprendidas com o Scrum e próximos passos.</p>
         <span class="tag">PDF · PPTX abaixo</span>
       </a>
       <a class="card" href="arquivos/Termo_de_Entrega_e_Recebimento_SCQ.pdf">
@@ -265,7 +244,7 @@
     <h2 style="margin-bottom:18px">Contato</h2>
     <div class="contatos">
       <div><strong>Entidade beneficiada</strong><br>Indústria Ervateira Verdelândia LTDA<br>CNPJ 78.742.384/0001-06<br>Rodovia PR 466, Km 15 — Guarapuava/PR<br>Representante: Agostinho Lubian</div>
-      <div><strong>Instituição de ensino</strong><br>Centro Universitário Campo Real<br>Curso de Engenharia de Software<br>Disciplina de Extensão · 7º período<br>Coordenação: Prof.ª Me. Isabelle Cordova Gomes</div>
+      <div><strong>Instituição de ensino</strong><br>Centro Universitário Campo Real<br>Curso de Engenharia de Software<br>Disciplina de Extensão · 7º período<br>Professor: Gabriel Christopher Dall'Pozzo</div>
       <div><strong>Equipe de desenvolvimento</strong><br>Rafael Angelo Silva — Scrum Master<br>João Pedro Ortolan Pereira — Product Owner<br>Hivan Lucas Rossinolli — Desenvolvedor<br>João Vinicius — Desenvolvedor</div>
       <div><strong>Contato do projeto</strong><br>João Pedro Ortolan Pereira<br><a href="tel:+5542988423465">(42) 98842-3465</a></div>
     </div>
